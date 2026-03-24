@@ -1,6 +1,8 @@
-import WAWebJS from "whatsapp-web.js";
-import { ITransaction, IUserConnected, Rekap } from "../../types";
 import { Model } from "mongoose";
+import WAWebJS from "whatsapp-web.js";
+
+import { ITransaction, IUserConnected, Rekap } from "../../types";
+import { TRANSACTION_TYPE } from "../constants";
 
 const rekapFormat = (month: string, year: string, outgoing: Number, incoming: Number, total: Number) => {
   const teksRekap = `
@@ -51,10 +53,10 @@ export const transactionRecordCurrentMonth = async (
   ]);
 
   rekap.forEach((item: Rekap) => {
-    if (item._id === 'OUT') {
+    if (item._id === TRANSACTION_TYPE.OUT) {
       pengeluaran = item.total;
       jumlahTransaksi = item.count;
-    } else if (item._id === 'IN') {
+    } else if (item._id === TRANSACTION_TYPE.IN) {
       pemasukan = item.total;
     }
   });

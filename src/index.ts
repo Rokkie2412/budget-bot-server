@@ -4,7 +4,8 @@ import { Client, LocalAuth } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import dotenv from 'dotenv';
 import { UserConnected, Transaction } from './models';
-import { TransactionMatchWithRegex, transactionRecordCurrentMonth } from './utils';
+import { TransactionOutMatchWithRegex, transactionRecordCurrentMonth } from './utils';
+import { REKAP } from './constants'
 
 dotenv.config();
 const app = express();
@@ -49,14 +50,11 @@ client.on('ready', (): void => {
         return;
       }
 
-      if (message.body.startsWith('.rekap')) {
+      if (message.body.startsWith(REKAP)) {
         await transactionRecordCurrentMonth(checkConnectedUser, message, Transaction);
       } else {
-        await TransactionMatchWithRegex(checkConnectedUser, message);
+        await TransactionOutMatchWithRegex(checkConnectedUser, message);
       }
-
-      // Transaction Out Logic
-
 
     } catch (error) {
       console.error('❌ Error:', error);
