@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import dotenv from 'dotenv';
-import { Transaction, UserConnected } from './models';
+import { UserConnected } from './models';
+import { TransactionMatchWithRegex } from './utils';
 
 dotenv.config();
 const app = express();
@@ -48,35 +49,8 @@ client.on('message', async (message) => {
       return;
     }
 
-    const regex = /^(\d+)\s+(.+)$/;
-    const match = message.body.match(regex);
-
-    if (!match) {
-      message.reply('Wrong formant, cannot detect transaction');
-      return;
-    }
-
-    if (match) {
-      const amount = Number(match[1]);
-      const description = match[2];
-      const currentDate = new Date();
-      const formattedDateWIB = currentDate.toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        dateStyle: 'full',
-        timeStyle: 'medium'
-      });
-
-      //save to database
-      await Transaction.create({
-        userId: checkConnectedUser.userId,
-        description: description || '',
-        amount: amount || 0,
-        date: formattedDateWIB
-      })
-
-      message.reply(`💰 Transaction recorded!\nRp ${amount.toLocaleString()} for: ${description}`);
-    }
-
+    // Transaction Out Logic
+    await TransactionMatchWithRegex(checkConnectedUser, message);
 
   } catch (error) {
     console.error('❌ Error:', error);

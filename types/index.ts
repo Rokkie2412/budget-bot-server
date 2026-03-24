@@ -7,4 +7,5 @@ export interface ITransaction {
   amount: number;
   description: string;
   date: Date;
+  type: "OUT" | "IN";
 }
