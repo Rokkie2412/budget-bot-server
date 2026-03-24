@@ -8,6 +8,11 @@ const TransactionSchema = new mongoose.Schema<ITransaction>({
 	description: { type: String, required: true },
 	date: { type: Date, default: Date.now },
 	type: { type: String, required: true }
+}, {
+	collection: 'transaction-list',
+	versionKey: false
 });
 
-export default mongoose.model("Transaction", TransactionSchema, 'transaction-list');
+const Transaction: mongoose.Model<ITransaction> = mongoose.models.Transaction || mongoose.model<ITransaction>("Transaction", TransactionSchema);
+
+export default Transaction;

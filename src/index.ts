@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import dotenv from 'dotenv';
-import { UserConnected } from './models';
-import { TransactionMatchWithRegex } from './utils';
+import { UserConnected, Transaction } from './models';
+import { TransactionMatchWithRegex, transactionRecordCurrentMonth } from './utils';
 
 dotenv.config();
 const app = express();
@@ -33,29 +33,35 @@ client.on('ready', (): void => {
   console.log('✅ WhatsApp client is ready!');
 })
 
-//core logic of client
-client.on('message', async (message) => {
-  const contact = await message.getContact();
-  const rawNumber = contact.number;
-  const formattedNumber = `+${rawNumber}`
+  //core logic of client
+  .on('message', async (message) => {
+    const contact = await message.getContact();
+    const rawNumber = contact.number;
+    const formattedNumber = `+${rawNumber}`
 
-  try {
-    const checkConnectedUser = await UserConnected.findOne({
-      userId: formattedNumber
-    });
+    try {
+      const checkConnectedUser = await UserConnected.findOne({
+        userId: formattedNumber
+      });
 
-    if (!checkConnectedUser) {
-      console.log('User not is not on whitelist', checkConnectedUser);
-      return;
+      if (!checkConnectedUser) {
+        console.log('User not is not on whitelist', checkConnectedUser);
+        return;
+      }
+
+      if (message.body.startsWith('.rekap')) {
+        await transactionRecordCurrentMonth(checkConnectedUser, message, Transaction);
+      } else {
+        await TransactionMatchWithRegex(checkConnectedUser, message);
+      }
+
+      // Transaction Out Logic
+
+
+    } catch (error) {
+      console.error('❌ Error:', error);
     }
-
-    // Transaction Out Logic
-    await TransactionMatchWithRegex(checkConnectedUser, message);
-
-  } catch (error) {
-    console.error('❌ Error:', error);
-  }
-})
+  })
 
 client.initialize();
 

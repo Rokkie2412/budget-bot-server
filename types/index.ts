@@ -9,3 +9,9 @@ export interface ITransaction {
   date: Date;
   type: "OUT" | "IN";
 }
+
+export interface Rekap {
+  _id: "OUT" | "IN";
+  total: number;
+  count: number;
+}
