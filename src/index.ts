@@ -3,8 +3,7 @@ import mongoose from 'mongoose';
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import dotenv from 'dotenv';
-import Transaction from './models/transactions';
-import UserConnected from './models/connected-user';
+import { Transaction, UserConnected } from './models';
 
 dotenv.config();
 const app = express();
