@@ -4,7 +4,7 @@ import { Model } from "mongoose";
 
 const rekapFormat = (month: string, year: string, outgoing: Number, incoming: Number, total: Number) => {
   const teksRekap = `
-      📊 *REKAP ${month.toUpperCase()} ${year}* 📊
+    📊 *REKAP ${month.toUpperCase()} ${year}* 📊
 
     📈 Pemasukan: *Rp ${incoming.toLocaleString('id-ID')}*
     📉 Pengeluaran: *Rp ${outgoing.toLocaleString('id-ID')}*
@@ -43,7 +43,7 @@ export const transactionRecordCurrentMonth = async (
     },
     {
       $group: {
-        _id: "$type", // Kelompokkan berdasarkan 'IN' atau 'OUT'
+        _id: "$type",
         total: { $sum: "$amount" },
         count: { $sum: 1 }
       }
