@@ -1,10 +1,10 @@
 import WAWebJS from 'whatsapp-web.js';
 
-import { IUserConnected } from '../../types';
 import { TRANSACTION_TYPE } from '../constants';
 import { Transaction } from '../models';
+import { encrypt } from '../utils';
 
-export const TransactionOutMatchWithRegex = async (checkConnectedUser: IUserConnected, message: WAWebJS.Message) => {
+export const TransactionOutMatchWithRegex = async (userId: string, message: WAWebJS.Message) => {
   const trimMessage = message.body.trim();
   const regex = /^(\d+)\s+(.+)$|^(.+)\s+(\d+)$/;
   const match = trimMessage.match(regex);
@@ -31,8 +31,8 @@ export const TransactionOutMatchWithRegex = async (checkConnectedUser: IUserConn
 
     //save to database
     await Transaction.create({
-      userId: checkConnectedUser.userId,
-      description: description || '',
+      userId: userId,
+      description: encrypt(description || ''),
       amount: amount || 0,
       date: wibDate,
       type: TRANSACTION_TYPE.OUT

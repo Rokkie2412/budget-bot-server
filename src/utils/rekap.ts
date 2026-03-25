@@ -1,7 +1,7 @@
 import { Model } from "mongoose";
 import WAWebJS from "whatsapp-web.js";
 
-import { ITransaction, IUserConnected, Rekap } from "../../types";
+import { ITransaction, Rekap } from "../../types";
 import { TRANSACTION_TYPE } from "../constants";
 
 const rekapFormat = (month: string, year: string, outgoing: Number, incoming: Number, total: Number) => {
@@ -19,7 +19,7 @@ const rekapFormat = (month: string, year: string, outgoing: Number, incoming: Nu
 }
 
 export const transactionRecordCurrentMonth = async (
-  checkConnectedUser: IUserConnected,
+  userId: string,
   message: WAWebJS.Message,
   Transaction: Model<ITransaction>,
 ) => {
@@ -34,7 +34,7 @@ export const transactionRecordCurrentMonth = async (
   const rekap = await Transaction.aggregate([
     {
       $match: {
-        userId: checkConnectedUser.userId,
+        userId,
         $expr: {
           $and: [
             { $eq: [{ $month: "$date" }, currentMonth] },

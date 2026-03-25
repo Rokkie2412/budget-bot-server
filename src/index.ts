@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
 import dotenv from 'dotenv';
+
 import { UserConnected, Transaction } from './models';
-import { TransactionOutMatchWithRegex, transactionRecordCurrentMonth } from './utils';
+import { TransactionOutMatchWithRegex, transactionRecordCurrentMonth, hashUserId } from './utils';
 import { REKAP } from './constants'
 
 dotenv.config();
@@ -50,10 +51,12 @@ client.on('ready', (): void => {
         return;
       }
 
+      const hashedUserId = hashUserId(formattedNumber);
+
       if (message.body.startsWith(REKAP)) {
-        await transactionRecordCurrentMonth(checkConnectedUser, message, Transaction);
+        await transactionRecordCurrentMonth(hashedUserId, message, Transaction);
       } else {
-        await TransactionOutMatchWithRegex(checkConnectedUser, message);
+        await TransactionOutMatchWithRegex(hashedUserId, message);
       }
 
     } catch (error) {
