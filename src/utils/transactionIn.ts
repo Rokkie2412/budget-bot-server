@@ -12,7 +12,7 @@ export const TransactionInMatchWithRegex = async (userId: string, message: WAWeb
 
   if (match) {
     const amount = Number(match[1]!.replace(/[\.,]/g, ''));
-    const description = match[2]!.trim();
+    const description = match[2] ? match[2].trim() : '-';
     const currentDate = new Date();
     const wibDate = new Date(currentDate.getTime() + (7 * 60 * 60 * 1000));
 

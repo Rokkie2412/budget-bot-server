@@ -45,7 +45,7 @@ client.on('ready', (): void => {
     const contact = await message.getContact();
     const rawNumber = contact.number;
     const formattedNumber = `+${rawNumber}`;
-    const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)\s+(.+)$/i;
+    const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)(?:\s+(.+))?$/i;
     const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
     const rekapRegex = /^\.(rekap)$/i;
 
