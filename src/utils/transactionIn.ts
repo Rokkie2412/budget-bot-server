@@ -4,11 +4,7 @@ import { TRANSACTION_TYPE } from '../constants';
 import { Transaction } from '../models';
 import { encrypt } from '../utils';
 
-export const TransactionInMatchWithRegex = async (userId: string, message: WAWebJS.Message) => {
-  const trimMessage = message.body.trim();
-  const regex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)\s+(.+)$/i;
-  const match = trimMessage.match(regex);
-
+export const TransactionInMatchWithRegex = async (userId: string, message: WAWebJS.Message, match: RegExpMatchArray) => {
   if (!match) {
     message.reply('Wrong format, cannot detect transaction');
     return;

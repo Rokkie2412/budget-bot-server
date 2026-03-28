@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import qrcode from 'qrcode-terminal';
 import { Client, LocalAuth } from 'whatsapp-web.js';
 
-import { REKAP } from './constants';
 import { Transaction, UserConnected } from './models';
 import {
   hashUserId,
@@ -48,6 +47,7 @@ client.on('ready', (): void => {
     const formattedNumber = `+${rawNumber}`;
     const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)\s+(.+)$/i;
     const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
+    const rekapRegex = /^\.(rekap)$/i;
 
     try {
       const checkConnectedUser = await UserConnected.findOne({
@@ -60,15 +60,14 @@ client.on('ready', (): void => {
       }
 
       const hashedUserId = hashUserId(formattedNumber);
-      const incomeMatch  = message.body.match(incomeRegex);
-      const historyMatch = message.body.match(historyRegex);
+      let match;
 
-      if (message.body.startsWith(REKAP)) {
+      if (match = message.body.match(rekapRegex)) {
         await transactionRecordCurrentMonth(hashedUserId, message, Transaction);
-      } else if (incomeMatch) {
-        await TransactionInMatchWithRegex(hashedUserId, message);
-      } else if (historyMatch) {
-        transactionHistoryBy(hashedUserId, message, historyMatch);
+      } else if (match = message.body.match(incomeRegex)) {
+        await TransactionInMatchWithRegex(hashedUserId, message, match);
+      } else if (match = message.body.match(historyRegex)) {
+        transactionHistoryBy(hashedUserId, message, match);
       } else {
         await TransactionOutMatchWithRegex(hashedUserId, message);
       }
