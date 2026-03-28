@@ -1,12 +1,12 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
-import { Client, LocalAuth } from 'whatsapp-web.js';
 import qrcode from 'qrcode-terminal';
-import dotenv from 'dotenv';
+import { Client, LocalAuth } from 'whatsapp-web.js';
 
-import { UserConnected, Transaction } from './models';
-import { TransactionOutMatchWithRegex, transactionRecordCurrentMonth, hashUserId } from './utils';
-import { REKAP } from './constants'
+import { REKAP } from './constants';
+import { Transaction, UserConnected } from './models';
+import { hashUserId, TransactionInMatchWithRegex, TransactionOutMatchWithRegex, transactionRecordCurrentMonth } from './utils';
 
 dotenv.config();
 const app = express();
@@ -39,7 +39,8 @@ client.on('ready', (): void => {
   .on('message', async (message) => {
     const contact = await message.getContact();
     const rawNumber = contact.number;
-    const formattedNumber = `+${rawNumber}`
+    const formattedNumber = `+${rawNumber}`;
+    const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)\s+(.+)$/i;
 
     try {
       const checkConnectedUser = await UserConnected.findOne({
@@ -52,9 +53,12 @@ client.on('ready', (): void => {
       }
 
       const hashedUserId = hashUserId(formattedNumber);
+      const incomeMatch  = message.body.match(incomeRegex);
 
       if (message.body.startsWith(REKAP)) {
         await transactionRecordCurrentMonth(hashedUserId, message, Transaction);
+      } else if (incomeMatch) {
+        await TransactionInMatchWithRegex(hashedUserId, message);
       } else {
         await TransactionOutMatchWithRegex(hashedUserId, message);
       }

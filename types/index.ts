@@ -15,3 +15,9 @@ export interface Rekap {
   total: number;
   count: number;
 }
+
+export interface TotalTransactionRekap {
+  outgoing: number;
+  incoming: number;
+  total: number;
+}
