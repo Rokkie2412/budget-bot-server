@@ -12,6 +12,7 @@ import {
   TransactionOutMatchWithRegex,
   transactionRecordCurrentMonth
 } from './utils';
+import { helpCommand } from './utils/help';
 
 dotenv.config();
 const app = express();
@@ -48,6 +49,7 @@ client.on('ready', (): void => {
     const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)(?:\s+(.+))?$/i;
     const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
     const rekapRegex = /^\.(rekap)$/i;
+    const helpRegex = /^\.(help)$/i;
 
     try {
       const checkConnectedUser = await UserConnected.findOne({
@@ -68,6 +70,8 @@ client.on('ready', (): void => {
         await TransactionInMatchWithRegex(hashedUserId, message, match);
       } else if (match = message.body.match(historyRegex)) {
         transactionHistoryBy(hashedUserId, message, match);
+      } else if (match = message.body.match(helpRegex)) {
+        helpCommand(message, match);
       } else {
         await TransactionOutMatchWithRegex(hashedUserId, message);
       }

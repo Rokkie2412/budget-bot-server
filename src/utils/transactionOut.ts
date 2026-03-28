@@ -10,7 +10,8 @@ export const TransactionOutMatchWithRegex = async (userId: string, message: WAWe
   const match = trimMessage.match(regex);
 
   if (!match) {
-    message.reply('Wrong format, cannot detect transaction');
+    message.reply('Format salah, tidak dapat mendeteksi transaksi');
+    message.reply('ketik ".help" untuk bantuan');
     return;
   }
 
