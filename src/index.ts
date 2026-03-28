@@ -6,6 +6,7 @@ import { Client, LocalAuth } from 'whatsapp-web.js';
 
 import { Transaction, UserConnected } from './models';
 import {
+  deleteLastTransaction,
   hashUserId,
   transactionHistoryBy,
   TransactionInMatchWithRegex,
@@ -53,6 +54,7 @@ client.on('ready', (): void => {
     const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
     const rekapRegex = /^\.(rekap)$/i;
     const helpRegex = /^\.(help)$/i;
+    const undoRegex = /^\.(batal|undo)$/i;
 
     try {
       const checkConnectedUser = await UserConnected.findOne({
@@ -60,7 +62,7 @@ client.on('ready', (): void => {
       });
 
       if (!checkConnectedUser) {
-        console.log('User not is not on whitelist', checkConnectedUser);
+        console.log('User tidak terdaftar', checkConnectedUser);
         return;
       }
 
@@ -75,6 +77,8 @@ client.on('ready', (): void => {
         transactionHistoryBy(hashedUserId, message, match);
       } else if (match = message.body.match(helpRegex)) {
         helpCommand(message, match);
+      } else if (match = message.body.match(undoRegex)) {
+        deleteLastTransaction(hashedUserId, message);
       } else {
         await TransactionOutMatchWithRegex(hashedUserId, message);
       }

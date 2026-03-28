@@ -27,15 +27,14 @@ export const TransactionOutMatchWithRegex = async (userId: string, message: WAWe
       description = String(match[3]);
     }
 
-    const currentDate = new Date();
-    const wibDate = new Date(currentDate.getTime() + (7 * 60 * 60 * 1000));
+    const date = new Date();
 
     //save to database
     await Transaction.create({
       userId: userId,
       description: encrypt(description || ''),
       amount: amount || 0,
-      date: wibDate,
+      date,
       type: TRANSACTION_TYPE.OUT
     })
 

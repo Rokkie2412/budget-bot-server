@@ -126,6 +126,7 @@ export const transactionHistoryBy = async (
     const desc = decrypt(tx.description);
     const amt = tx.amount.toLocaleString('id-ID');
     const dateString = tx.date.toLocaleString('id-ID', {
+      timeZone: 'Asia/Jakarta',
       day: 'numeric',
       month: 'short',
       year: 'numeric',

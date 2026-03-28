@@ -13,15 +13,14 @@ export const TransactionInMatchWithRegex = async (userId: string, message: WAWeb
   if (match) {
     const amount = Number(match[1]!.replace(/[\.,]/g, ''));
     const description = match[2] ? match[2].trim() : '-';
-    const currentDate = new Date();
-    const wibDate = new Date(currentDate.getTime() + (7 * 60 * 60 * 1000));
+    const date = new Date();
 
     //save to database
     await Transaction.create({
       userId: userId,
       description: encrypt(description || ''),
       amount: amount || 0,
-      date: wibDate,
+      date,
       type: TRANSACTION_TYPE.IN
     })
 
