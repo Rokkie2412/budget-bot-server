@@ -39,6 +39,6 @@ export const TransactionOutMatchWithRegex = async (userId: string, message: WAWe
       type: TRANSACTION_TYPE.OUT
     })
 
-    message.reply(`💰 Transaction outgoing recorded!\nRp ${amount.toLocaleString()} for: ${description}`);
+    message.reply(`💰 *Pengeluaran Tercatat!*\nRp ${amount.toLocaleString()} Keperluan: ${description}`);
   }
 }

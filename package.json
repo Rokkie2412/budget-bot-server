@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn src/index.ts",
+    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn src/index.ts",
+    "start": "cross-env NODE_ENV=production ts-node-dev --respawn src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -26,6 +27,7 @@
     "@types/mongoose": "5.11.96",
     "@types/node": "25.5.0",
     "@types/qrcode-terminal": "0.12.2",
+    "cross-env": "^10.1.0",
     "ts-node-dev": "2.0.0",
     "typescript": "5.9.3"
   }

@@ -10,6 +10,6 @@ export const HELP_COMMANDS = [
   { command: '[nomimal] [ket]', desc: 'Catat pengeluaran' },
   { command: '[ket] [nominal]', desc: 'Catat pengeluaran' },
   { command: '.rekap', desc: 'Lihat laporan bulan ini' },
-  { command: '.cek [angka]', desc: 'Lihat histori transaksi' },
+  { command: '.cek | .history | .last [angka]', desc: 'Lihat histori transaksi' },
   // { command: '.batal', desc: 'Hapus transaksi terakhir' },
 ];

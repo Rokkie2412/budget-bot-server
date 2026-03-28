@@ -18,9 +18,12 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+const isDev = process.env.NODE_ENV === 'development';
+const dbURI = isDev ? process.env.MONGO_URI_DEV : process.env.MONGO_URI_PROD;
+
 //connect to mongodb
-mongoose.connect(process.env.MONGO_URI || '')
-  .then(() => console.log('Connected to MongoDB 🛻'))
+mongoose.connect(dbURI || '')
+  .then(() => console.log(`Connected to MongoDB ${isDev ? 'development' : 'production'} mode 🛻`))
   .catch((err) => {
     console.error('❌ Failed to connect to MongoDB', err)
     return process.exit(1);

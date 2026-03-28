@@ -25,6 +25,6 @@ export const TransactionInMatchWithRegex = async (userId: string, message: WAWeb
       type: TRANSACTION_TYPE.IN
     })
 
-    message.reply(`💰 Transaction Incoming recorded!\nRp ${amount.toLocaleString()} for: ${description}`);
+    message.reply(`💰 *Pemasukan Berhasil Dicatat!\nRp ${amount.toLocaleString()} Sumber: ${description}`);
   }
 }
