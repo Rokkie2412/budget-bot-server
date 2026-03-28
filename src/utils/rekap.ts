@@ -3,6 +3,8 @@ import WAWebJS from "whatsapp-web.js";
 
 import { ITransaction, Rekap, TotalTransactionRekap } from "../../types";
 import { TRANSACTION_TYPE } from "../constants";
+import { Transaction } from "../models";
+import { decrypt } from "./encryption";
 
 const rekapFormat = (month: string, year: string, outgoing: Number, incoming: Number, total: TotalTransactionRekap) => {
   const teksRekap = `
@@ -94,4 +96,50 @@ export const transactionRecordCurrentMonth = async (
 
     message.reply(recordTextFormat);
   }
+}
+
+export const transactionHistoryBy = async (
+  userId: string,
+  message: WAWebJS.Message,
+  match: RegExpMatchArray
+) => {
+  if(!match) return
+
+  let getLimit = Math.min(parseInt(match[2] || '5'), 20);
+  
+  const findTransaction = await Transaction.find({userId}).sort({date: -1}).limit(getLimit);
+
+  if (findTransaction.length === 0) {
+    return message.reply("📭 Belum ada catatan transaksi.");
+  }
+
+  if (findTransaction.length < 5){ 
+    getLimit = findTransaction.length
+  }
+
+  let listTeks = `📝 *${getLimit} TRANSAKSI TERAKHIR*\n━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  findTransaction.forEach((tx,index) => {
+    const icon = tx.type === 'IN' ? '🟢' : '🔴';
+    const typeLabel = tx.type === 'IN' ? '[+]' : '[-]';
+
+    // Dekripsi deskripsi sebelum ditampilkan
+    const desc = decrypt(tx.description);
+    const amt = tx.amount.toLocaleString('id-ID');
+    const dateString = tx.date.toLocaleString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).replace(/\./g, ':');
+    // Menyusun baris teks
+    listTeks += `${index + 1}. ${icon} *Rp ${amt}*\n`;
+    listTeks += `   🕒 _${dateString}_\n`;
+    listTeks += `   📝 ${desc} ${typeLabel}\n\n`;
+  });
+
+  listTeks += `──────────────────────\n_Gunakan .rekap untuk total bulanan_`;
+
+  return await message.reply(listTeks.trim());
 }

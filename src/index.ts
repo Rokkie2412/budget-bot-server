@@ -6,7 +6,13 @@ import { Client, LocalAuth } from 'whatsapp-web.js';
 
 import { REKAP } from './constants';
 import { Transaction, UserConnected } from './models';
-import { hashUserId, TransactionInMatchWithRegex, TransactionOutMatchWithRegex, transactionRecordCurrentMonth } from './utils';
+import {
+  hashUserId,
+  transactionHistoryBy,
+  TransactionInMatchWithRegex,
+  TransactionOutMatchWithRegex,
+  transactionRecordCurrentMonth
+} from './utils';
 
 dotenv.config();
 const app = express();
@@ -41,6 +47,7 @@ client.on('ready', (): void => {
     const rawNumber = contact.number;
     const formattedNumber = `+${rawNumber}`;
     const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)\s+(.+)$/i;
+    const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
 
     try {
       const checkConnectedUser = await UserConnected.findOne({
@@ -54,11 +61,14 @@ client.on('ready', (): void => {
 
       const hashedUserId = hashUserId(formattedNumber);
       const incomeMatch  = message.body.match(incomeRegex);
+      const historyMatch = message.body.match(historyRegex);
 
       if (message.body.startsWith(REKAP)) {
         await transactionRecordCurrentMonth(hashedUserId, message, Transaction);
       } else if (incomeMatch) {
         await TransactionInMatchWithRegex(hashedUserId, message);
+      } else if (historyMatch) {
+        transactionHistoryBy(hashedUserId, message, historyMatch);
       } else {
         await TransactionOutMatchWithRegex(hashedUserId, message);
       }
