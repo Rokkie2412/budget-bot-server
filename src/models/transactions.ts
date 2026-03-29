@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { ITransaction } from '../../types';
+import type { ITransaction } from '../types';
 
 const TransactionSchema = new mongoose.Schema<ITransaction>({
 	userId: { type: String, required: true },

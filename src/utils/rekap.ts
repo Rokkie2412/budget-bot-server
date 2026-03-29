@@ -1,9 +1,9 @@
 import { Model } from "mongoose";
 import WAWebJS from "whatsapp-web.js";
 
-import { ITransaction, Rekap, TotalTransactionRekap } from "../../types";
 import { TRANSACTION_TYPE } from "../constants";
 import { Transaction } from "../models";
+import { ITransaction, Rekap, TotalTransactionRekap } from "../types";
 import { decrypt } from "./encryption";
 
 const rekapFormat = (month: string, year: string, outgoing: Number, incoming: Number, total: TotalTransactionRekap) => {
