@@ -4,7 +4,7 @@
 #
 
 app = 'budget-bot-server'
-primary_region = 'sin'
+primary_region = 'hkg'
 
 [build]
 
@@ -21,6 +21,9 @@ primary_region = 'sin'
   processes = ['app']
 
 [[vm]]
-  memory = '512mb'
+  memory = '1gb'
   cpus = 1
-  memory_mb = 512
+  memory_mb = 1024
+
+[deployment]
+  strategy = "immediate"
