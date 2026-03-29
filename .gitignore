@@ -1,5 +1,24 @@
-/node_modules
-/packages-lock.json
-/.wwebjs_cache
-/.wwebjs_auth
-/.idx
+# Dependency
+node_modules/
+package-lock.json
+
+# WhatsApp Web Session & Cache
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Environment Variables
+.env
+
+# Build Output
+dist/
+build/
+
+# IDE
+.idx/
+.vscode/
+.idea/
+*.log
+
+# OS Metadata
+.DS_Store
+Thumbs.db
