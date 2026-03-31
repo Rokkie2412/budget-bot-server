@@ -11,5 +11,5 @@ export const HELP_COMMANDS = [
   { command: '[ket] [nominal]', desc: 'Catat pengeluaran' },
   { command: '.rekap', desc: 'Lihat laporan bulan ini' },
   { command: '.cek | .history | .last [angka]', desc: 'Lihat histori transaksi' },
-  // { command: '.batal', desc: 'Hapus transaksi terakhir' },
+  { command: '.batal', desc: 'Hapus transaksi terakhir' },
 ];
