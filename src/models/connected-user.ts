@@ -9,6 +9,10 @@ const UserConnectedSchema = new mongoose.Schema<IUserConnected>(
 			required: true,
 			trim: true,
 		},
+		password: {
+			type: String,
+			required: true
+		}
 	},
 	{
 		strict: false,

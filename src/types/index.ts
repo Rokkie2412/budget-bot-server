@@ -1,5 +1,6 @@
 export interface IUserConnected {
   userId: string;
+  password: string;
 }
 
 export interface ITransaction {
