@@ -40,8 +40,8 @@ export const transactionRecordCurrentMonth = async (
   let jumlahTransaksiMasuk = 0;
 
   const getDate = new Date();
-  const currentMonth = getDate.getMonth() + 1;
-  const currentYear = getDate.getFullYear();
+  const currentYear = parseInt(getDate.toLocaleString('id-ID', { year: 'numeric', timeZone: 'Asia/Jakarta' }));
+  const monthName = getDate.toLocaleString('id-ID', { month: 'long', timeZone: 'Asia/Jakarta' });
 
   const rekap = await Transaction.aggregate([
     {
@@ -49,7 +49,7 @@ export const transactionRecordCurrentMonth = async (
         userId,
         $expr: {
           $and: [
-            { $eq: [{ $month: "$date" }, currentMonth] },
+            { $eq: [{ $month: "$date" }, monthName] },
             { $eq: [{ $year: "$date" }, currentYear] }
           ]
         }
@@ -74,7 +74,10 @@ export const transactionRecordCurrentMonth = async (
     };
   });
 
-  const longMonth = getDate.toLocaleString('id-ID', { month: 'long' });
+  const longMonth = getDate.toLocaleString('id-ID', { 
+    month: 'long',
+    timeZone: 'Asia/Jakarta' 
+  });
   const jumlahTransaksi = jumlahTransaksiKeluar + jumlahTransaksiMasuk;
 
   if (jumlahTransaksi === 0) {
