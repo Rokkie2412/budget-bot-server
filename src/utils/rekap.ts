@@ -40,16 +40,19 @@ export const transactionRecordCurrentMonth = async (
   let jumlahTransaksiMasuk = 0;
 
   const getDate = new Date();
-  const currentYear = parseInt(getDate.toLocaleString('id-ID', { year: 'numeric', timeZone: 'Asia/Jakarta' }));
-  const monthName = getDate.toLocaleString('id-ID', { month: 'long', timeZone: 'Asia/Jakarta' });
 
+  const currentMonth = parseInt(getDate.toLocaleString('id-ID', { month: 'numeric', timeZone: 'Asia/Jakarta' }));
+  const currentYear = parseInt(getDate.toLocaleString('id-ID', { year: 'numeric', timeZone: 'Asia/Jakarta' }));
+
+  const monthName = getDate.toLocaleString('id-ID', { month: 'long', timeZone: 'Asia/Jakarta' });
   const rekap = await Transaction.aggregate([
     {
       $match: {
         userId,
         $expr: {
           $and: [
-            { $eq: [{ $month: "$date" }, monthName] },
+            // MongoDB $month mengembalikan angka, jadi kita bandingkan dengan currentMonth (angka)
+            { $eq: [{ $month: "$date" }, currentMonth] },
             { $eq: [{ $year: "$date" }, currentYear] }
           ]
         }
@@ -90,7 +93,7 @@ export const transactionRecordCurrentMonth = async (
     }
 
     const recordTextFormat = rekapFormat(
-      longMonth,
+      monthName,
       currentYear.toString(),
       pengeluaran,
       pemasukan,
