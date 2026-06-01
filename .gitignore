@@ -22,6 +22,3 @@ build/
 # OS Metadata
 .DS_Store
 Thumbs.db
-
-# secrets
-.env
