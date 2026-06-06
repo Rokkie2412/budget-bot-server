@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
+import puppeteer from "puppeteer-core";
 import qrcode from "qrcode-terminal";
 import { Client, LocalAuth } from "whatsapp-web.js";
 
@@ -39,6 +40,14 @@ mongoose
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
+    // Memaksa whatsapp-web.js membaca puppeteer-core kosongan kita
+    module: puppeteer,
+    headless: true,
+
+    // Trik jitu: Gunakan executablePath dari environment variable .env 
+    // atau fallback ke path biner manual jika kamu menginstall 'links' atau 'chromium'
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/data/data/com.termux/files/usr/bin/chromium",
+
     handleSIGINT: false,
     args: [
       "--no-sandbox",
@@ -47,7 +56,7 @@ const client = new Client({
       "--disable-accelerated-2d-canvas",
       "--no-first-run",
       "--no-zygote",
-      "--single-process",
+      "--single-process", // Sangat menyelamatkan RAM 3GB Redmi 6A
       "--disable-gpu",
     ],
   },
