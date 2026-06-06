@@ -65,6 +65,8 @@ const client = new Client({
 client.on("qr", (qr) => {
   console.log("QR code received, scanning...");
   qrcode.generate(qr, { small: true });
+  console.log("\n🔗 Buka link ini di browser untuk scan QR:");
+  console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
 });
 
 client
