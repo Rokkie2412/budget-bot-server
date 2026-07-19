@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
     "build": "tsc",
-    "start": "tsx src/index.ts",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +16,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "3.0.3",
+    "cross-env": "^10.1.0",
     "crypto": "1.0.1",
     "dotenv": "17.3.1",
     "express": "5.2.1",
