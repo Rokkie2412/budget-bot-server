@@ -13,3 +13,39 @@ export const HELP_COMMANDS = [
   { command: '.cek | .history | .last [angka]', desc: 'Lihat histori transaksi' },
   { command: '.batal', desc: 'Hapus transaksi terakhir' },
 ];
+
+export const BUDGET_CATEGORIES = [
+  "Bills",
+  "Education",
+  "Family Needs",
+  "Food & Drinks",
+  "Gift and Chartiy",
+  "Groceries",
+  "Health & personal care",
+  "Hobby & Entertaiment",
+  "Loans",
+  "Saving & Investment",
+  "Shopping",
+  "sports",
+  "Transportaion",
+  "Traveling",
+  "Other"
+] as const;
+
+export const CATEGORY_EMOJIS: Record<string, string> = {
+  "Bills": "💡",
+  "Education": "🎓",
+  "Family Needs": "🏠",
+  "Food & Drinks": "🍔",
+  "Gift and Chartiy": "🎁",
+  "Groceries": "🛒",
+  "Health & personal care": "🏥",
+  "Hobby & Entertaiment": "🎮",
+  "Loans": "💸",
+  "Saving & Investment": "📈",
+  "Shopping": "🛍️",
+  "sports": "⚽",
+  "Transportaion": "🚗",
+  "Traveling": "✈️",
+  "Other": "📦"
+};

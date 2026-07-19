@@ -46,7 +46,7 @@ const client = new Client({
 
     // Trik jitu: Gunakan executablePath dari environment variable .env 
     // atau fallback ke path biner manual jika kamu menginstall 'links' atau 'chromium'
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/data/data/com.termux/files/usr/bin/chromium",
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (process.platform === 'android' ? "/data/data/com.termux/files/usr/bin/chromium" : undefined),
 
     handleSIGINT: false,
     args: [
@@ -56,7 +56,7 @@ const client = new Client({
       "--disable-accelerated-2d-canvas",
       "--no-first-run",
       "--no-zygote",
-      "--single-process", // Sangat menyelamatkan RAM 3GB Redmi 6A
+      ...(process.platform === 'android' ? ["--single-process"] : []),
       "--disable-gpu",
     ],
   },
