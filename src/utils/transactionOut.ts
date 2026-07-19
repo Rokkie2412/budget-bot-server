@@ -1,10 +1,10 @@
 import WAWebJS from 'whatsapp-web.js';
 
-import { TRANSACTION_TYPE } from '../constants';
+import { TRANSACTION_TYPE, CATEGORY_EMOJIS } from '../constants';
 import { Transaction } from '../models';
-import { encrypt } from '../utils';
+import { encrypt, getCategoryFromDescription } from '../utils';
 
-export const TransactionOutMatchWithRegex = async (userId: string, message: WAWebJS.Message) => {
+export const TransactionOutMatchWithRegex = async (userId: string, message: WAWebJS.Message): Promise<void> => {
   const trimMessage = message.body.trim();
   const regex = /^(\d+)\s+(.+)$|^(.+)\s+(\d+)$/;
   const match = trimMessage.match(regex);
@@ -29,15 +29,19 @@ export const TransactionOutMatchWithRegex = async (userId: string, message: WAWe
 
     const date = new Date();
 
+    const category = await getCategoryFromDescription(description);
+    const emoji = CATEGORY_EMOJIS[category] || "📦";
+
     //save to database
     await Transaction.create({
       userId: userId,
       description: encrypt(description || ''),
       amount: amount || 0,
       date,
-      type: TRANSACTION_TYPE.OUT
-    })
+      type: TRANSACTION_TYPE.OUT,
+      category
+    });
 
-    message.reply(`💰 *Pengeluaran Tercatat!*\nRp ${amount.toLocaleString()} Keperluan: ${description}`);
+    message.reply(`💰 *Pengeluaran Tercatat!*\nRp ${amount.toLocaleString('id-ID')} Keperluan: ${description}\nKategori: ${emoji} ${category}`);
   }
-}
+};

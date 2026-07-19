@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
+import puppeteer from "puppeteer-core";
 import qrcode from "qrcode-terminal";
 import { Client, LocalAuth } from "whatsapp-web.js";
 
@@ -39,6 +40,14 @@ mongoose
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
+    // Memaksa whatsapp-web.js membaca puppeteer-core kosongan kita
+    module: puppeteer,
+    headless: true,
+
+    // Trik jitu: Gunakan executablePath dari environment variable .env 
+    // atau fallback ke path biner manual jika kamu menginstall 'links' atau 'chromium'
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (process.platform === 'android' ? "/data/data/com.termux/files/usr/bin/chromium" : undefined),
+
     handleSIGINT: false,
     args: [
       "--no-sandbox",
@@ -47,7 +56,7 @@ const client = new Client({
       "--disable-accelerated-2d-canvas",
       "--no-first-run",
       "--no-zygote",
-      "--single-process",
+      ...(process.platform === 'android' ? ["--single-process"] : []),
       "--disable-gpu",
     ],
   },
@@ -56,6 +65,8 @@ const client = new Client({
 client.on("qr", (qr) => {
   console.log("QR code received, scanning...");
   qrcode.generate(qr, { small: true });
+  console.log("\n🔗 Buka link ini di browser untuk scan QR:");
+  console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
 });
 
 client
