@@ -49,6 +49,8 @@ const client = new Client({
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (process.platform === 'android' ? "/data/data/com.termux/files/usr/bin/chromium" : undefined),
 
     handleSIGINT: false,
+    timeout: 0, // Mencegah error timeout saat loading page
+    protocolTimeout: 0, // Mencegah ProtocolError Network.getResponseBody timed out
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
