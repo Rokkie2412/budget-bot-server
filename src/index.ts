@@ -42,7 +42,7 @@ const client = new Client({
   puppeteer: {
     // Memaksa whatsapp-web.js membaca puppeteer-core kosongan kita
     module: puppeteer,
-    headless: true,
+    headless: false,
 
     // Trik jitu: Gunakan executablePath dari environment variable .env 
     // atau fallback ke path biner manual jika kamu menginstall 'links' atau 'chromium'
