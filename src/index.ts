@@ -62,30 +62,23 @@ const client = new Client({
       "--disable-gpu",
     ],
   },
+  ...(process.env.PAIRING_NUMBER 
+      ? { pairWithPhoneNumber: { phoneNumber: process.env.PAIRING_NUMBER } } 
+      : {}),
 });
 
-client.on("qr", async (qr) => {
-  const pairingNumber = process.env.PAIRING_NUMBER;
-  if (pairingNumber) {
-    console.log(`Menggunakan Pairing Code untuk nomor: ${pairingNumber}`);
-    try {
-      // Tunggu sebentar agar page benar-benar siap menerima request pairing code
-      setTimeout(async () => {
-        const code = await client.requestPairingCode(pairingNumber);
-        console.log(`\n📲 PAIRING CODE ANDA: ${code}`);
-        console.log("Masukkan kode di atas pada aplikasi WhatsApp Anda (Linked Devices -> Link with phone number)\n");
-      }, 3000);
-    } catch (err) {
-      console.error("Gagal mendapatkan pairing code:", err);
-    }
-  } else {
-    console.log("QR code received, scanning...");
-    qrcode.generate(qr, { small: true });
-    console.log("\n🔗 Buka link ini di browser untuk scan QR:");
-    console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
-    console.log("\n💡 Tips HP Kentang (Redmi 6A dll):");
-    console.log("Jika gagal scan QR, gunakan Pairing Code. Tambahkan PAIRING_NUMBER=628... di file .env lalu restart.");
-  }
+client.on("qr", (qr) => {
+  console.log("QR code received, scanning...");
+  qrcode.generate(qr, { small: true });
+  console.log("\n🔗 Buka link ini di browser untuk scan QR:");
+  console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
+  console.log("\n💡 Tips HP Kentang (Redmi 6A dll):");
+  console.log("Jika gagal scan QR, gunakan Pairing Code. Tambahkan PAIRING_NUMBER=628... di file .env lalu restart.");
+});
+
+client.on("code", (code) => {
+  console.log(`\n📲 PAIRING CODE ANDA: ${code}`);
+  console.log("Masukkan kode di atas pada aplikasi WhatsApp Anda (Linked Devices -> Link with phone number)\n");
 });
 
 client
