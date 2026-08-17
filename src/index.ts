@@ -39,6 +39,9 @@ mongoose
 //setup whatsapp client
 const client = new Client({
   authStrategy: new LocalAuth(),
+  webVersionCache: {
+    type: 'none',
+  },
   puppeteer: {
     // Memaksa whatsapp-web.js membaca puppeteer-core kosongan kita
     module: puppeteer,
@@ -62,6 +65,9 @@ const client = new Client({
       "--disable-gpu",
     ],
   },
+  ...(process.env.PAIRING_NUMBER 
+      ? { pairWithPhoneNumber: { phoneNumber: process.env.PAIRING_NUMBER } } 
+      : {}),
 });
 
 client.on("qr", (qr) => {
@@ -69,6 +75,13 @@ client.on("qr", (qr) => {
   qrcode.generate(qr, { small: true });
   console.log("\n🔗 Buka link ini di browser untuk scan QR:");
   console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
+  console.log("\n💡 Tips HP Kentang (Redmi 6A dll):");
+  console.log("Jika gagal scan QR, gunakan Pairing Code. Tambahkan PAIRING_NUMBER=628... di file .env lalu restart.");
+});
+
+client.on("code", (code) => {
+  console.log(`\n📲 PAIRING CODE ANDA: ${code}`);
+  console.log("Masukkan kode di atas pada aplikasi WhatsApp Anda (Linked Devices -> Link with phone number)\n");
 });
 
 client
