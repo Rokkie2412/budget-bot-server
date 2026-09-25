@@ -1,7 +1,7 @@
 import type WAWebJS from "whatsapp-web.js";
 
-import { Transaction } from "../models";
-import { decrypt } from "./encryption";
+import { Transaction } from "../models/index.js";
+import { decrypt } from "./encryption.js";
 
 export const deleteLastTransaction = async (userId: string, message: WAWebJS.Message) => {
   const lastTransaction = await Transaction.findOne({userId}).sort({date: -1})

@@ -1,11 +1,11 @@
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
-import puppeteer from "puppeteer-core";
 import qrcode from "qrcode-terminal";
-import { Client, LocalAuth } from "whatsapp-web.js";
+import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys'
+import { Boom } from '@hapi/boom'
 
-import { Transaction, UserConnected } from "./models";
+import { Transaction, UserConnected } from "./models/index.js";
 import {
   deleteLastTransaction,
   hashUserId,
@@ -13,8 +13,8 @@ import {
   TransactionInMatchWithRegex,
   TransactionOutMatchWithRegex,
   transactionRecordCurrentMonth,
-} from "./utils";
-import { helpCommand } from "./utils/help";
+  helpCommand
+} from "./utils/index.js";
 
 dotenv.config();
 const app = express();
@@ -36,104 +36,89 @@ mongoose
     return process.exit(1);
   });
 
-//setup whatsapp client
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  webVersionCache: {
-    type: 'none',
-  },
-  puppeteer: {
-    // Memaksa whatsapp-web.js membaca puppeteer-core kosongan kita
-    module: puppeteer,
-    headless: true,
+export async function connectToWhatsApp() {
+  const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys')
 
-    // Trik jitu: Gunakan executablePath dari environment variable .env 
-    // atau fallback ke path biner manual jika kamu menginstall 'links' atau 'chromium'
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (process.platform === 'android' ? "/data/data/com.termux/files/usr/bin/chromium" : undefined),
-
-    handleSIGINT: false,
-    timeout: 0, // Mencegah error timeout saat loading page
-    protocolTimeout: 0, // Mencegah ProtocolError Network.getResponseBody timed out
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-accelerated-2d-canvas",
-      "--no-first-run",
-      "--no-zygote",
-      ...(process.platform === 'android' ? ["--single-process"] : []),
-      "--disable-gpu",
-    ],
-  },
-  ...(process.env.PAIRING_NUMBER 
-      ? { pairWithPhoneNumber: { phoneNumber: process.env.PAIRING_NUMBER } } 
-      : {}),
-});
-
-client.on("qr", (qr) => {
-  console.log("QR code received, scanning...");
-  qrcode.generate(qr, { small: true });
-  console.log("\n🔗 Buka link ini di browser untuk scan QR:");
-  console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
-  console.log("\n💡 Tips HP Kentang (Redmi 6A dll):");
-  console.log("Jika gagal scan QR, gunakan Pairing Code. Tambahkan PAIRING_NUMBER=628... di file .env lalu restart.");
-});
-
-client.on("code", (code) => {
-  console.log(`\n📲 PAIRING CODE ANDA: ${code}`);
-  console.log("Masukkan kode di atas pada aplikasi WhatsApp Anda (Linked Devices -> Link with phone number)\n");
-});
-
-client
-  .on("ready", (): void => {
-    console.log("✅ WhatsApp client is ready!");
+  const sock = makeWASocket({
+    auth: state
   })
 
-  //core logic of client
-  .on("message", async (message) => {
-    const contact = await message.getContact();
-    const rawNumber = contact.number;
-    const formattedNumber = `+${rawNumber}`;
-    const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)(?:\s+(.+))?$/i;
-    const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
+  sock.ev.on('connection.update', (update) => {
+    const { connection, lastDisconnect, qr } = update
+    if (qr) {
+        qrcode.generate(qr, { small: true })
+    }
+    if (connection === 'close') {
+        const shouldReconnect =
+            (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut
+        console.log('connection closed due to', lastDisconnect?.error, ', reconnecting:', shouldReconnect)
+        if (shouldReconnect) {
+            connectToWhatsApp()
+        }
+    } else if (connection === 'open') {
+        console.log('opened connection')
+    }
+  })
+
+  sock.ev.on('messages.upsert', async (event) => {
+    if (event.type !== 'notify') return
+    const nomorTarget = "6285156141278";
+    const keyEventId = event.messages[0]?.key.remoteJidAlt
+
+    if (!keyEventId) return 
+
+    const formattedNumber = `+${nomorTarget}`;
     const rekapRegex = /^\.(rekap)$/i;
+    const regexMatch = new RegExp(nomorTarget);
+    const getMyContact = regexMatch.test(keyEventId);
     const helpRegex = /^\.(help)$/i;
-    const undoRegex = /^\.(batal|undo)$/i;
+    const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)(?:\s+(.+))?$/i;
+
+    console.log('getMyContact', getMyContact);
+    console.log('get message', event.messages[0]?.message?.conversation);
+
+    const getMessage =  event.messages[0]?.message?.conversation
 
     try {
-      const checkConnectedUser = await UserConnected.findOne({
-        userId: formattedNumber,
-      });
+        const checkConnectedUser = await UserConnected.findOne({
+          userId: formattedNumber,
+        });
 
-      if (!checkConnectedUser) {
-        console.log("User tidak terdaftar", checkConnectedUser);
-        return;
-      }
+        if (!checkConnectedUser) {
+          console.log("User tidak terdaftar", checkConnectedUser);
+          return;
+        }
 
-      const hashedUserId = hashUserId(formattedNumber);
-      let match;
+        const hashedUserId = hashUserId(formattedNumber);
 
-      if ((match = message.body.match(rekapRegex))) {
-        await transactionRecordCurrentMonth(hashedUserId, message, Transaction);
-      } else if ((match = message.body.match(incomeRegex))) {
-        await TransactionInMatchWithRegex(hashedUserId, message, match);
-      } else if ((match = message.body.match(historyRegex))) {
-        transactionHistoryBy(hashedUserId, message, match);
-      } else if ((match = message.body.match(helpRegex))) {
-        helpCommand(message, match);
-      } else if ((match = message.body.match(undoRegex))) {
-        deleteLastTransaction(hashedUserId, message);
-      } else {
-        await TransactionOutMatchWithRegex(hashedUserId, message);
-      }
+        if (!getMessage) {
+          return
+        }
+        
+
+        let match;
+
+        const getJID = event.messages[0]?.key.remoteJid ?? ''
+
+        if (!getJID) return
+
+        if ((match = getMessage.match(rekapRegex))) {
+          await transactionRecordCurrentMonth(hashedUserId, sock, getJID, Transaction);
+        } else if ((match = getMessage.match(helpRegex))) {
+          await helpCommand(sock, getJID, match);
+        } else if ((match = getMessage.match(incomeRegex))) {
+          await TransactionInMatchWithRegex(sock, getJID, hashedUserId, match);
+        } else {
+          await TransactionOutMatchWithRegex(sock, getJID, hashedUserId, getMessage);
+        }
     } catch (error) {
-      console.error("❌ Error:", error);
+      
     }
-  });
+  })
 
-client.initialize();
+  // Save credentials whenever they are updated
+  sock.ev.on('creds.update', saveCreds)
+}
 
-const PORT = process.env.PORT || 1001;
-app.listen(PORT, () => {
-  console.log(`🚀 Server run at http://localhost:${PORT}`);
-});
+connectToWhatsApp()
+

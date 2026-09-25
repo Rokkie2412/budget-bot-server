@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-import { ENC_ALGORITHM } from '../constants'
+import { ENC_ALGORITHM } from '../constants/index.js'
 
 export const hashUserId = (userId: string): string => {
   return bcrypt.hashSync(userId, process.env.STATIC_SALT);

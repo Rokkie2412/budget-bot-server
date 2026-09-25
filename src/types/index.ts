@@ -3,22 +3,36 @@ export interface IUserConnected {
   password: string;
 }
 
-export type BudgetCategory =
+export type BudgetCategoryExpense =
   | "Bills"
   | "Education"
   | "Family Needs"
   | "Food & Drinks"
-  | "Gift and Chartiy"
+  | "Gift and Charity"
   | "Groceries"
-  | "Health & personal care"
-  | "Hobby & Entertaiment"
+  | "Health & Personal Care"
+  | "Hobby & Entertainment"
   | "Loans"
+  | "Lending & Receivables"
   | "Saving & Investment"
   | "Shopping"
-  | "sports"
-  | "Transportaion"
+  | "Sports"
+  | "Transportation"
   | "Traveling"
-  | "Other";
+  | "Debt"
+  | "Other Expense";
+
+export type BudgetCategoryIncome =
+  | "Salary"
+  | "Business & Profit"
+  | "Freelance & Side Job"
+  | "Investment & Dividend"
+  | "Allowance & Gift"
+  | "Debt Repayment"
+  | "Bonus & Commission"
+  | "Rental Income"
+  | "Refund & Cashback"
+  | "Other Income";
 
 export interface ITransaction {
   userId: string;
@@ -26,7 +40,7 @@ export interface ITransaction {
   description: string;
   date: Date;
   type: "OUT" | "IN";
-  category?: BudgetCategory;
+  category?: BudgetCategoryExpense | BudgetCategoryIncome;
 }
 
 export interface Rekap {
@@ -40,3 +54,8 @@ export interface TotalTransactionRekap {
   incoming: number;
   total: number;
 }
+
+export type KeywordMapType = Partial<Record<
+  Exclude<BudgetCategoryExpense | BudgetCategoryIncome, "Other Expense" | "Other Income">,
+  string[]
+>>;

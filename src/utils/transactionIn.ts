@@ -1,12 +1,16 @@
-import WAWebJS from 'whatsapp-web.js';
+import { TRANSACTION_TYPE, CATEGORY_EMOJIS_INCOME } from '../constants/index.js';
+import { Transaction } from '../models/index.js';
+import { encrypt, getLocalFallbackCategory } from '../utils/index.js';
+import { WASocket } from '@whiskeysockets/baileys';
 
-import { TRANSACTION_TYPE, CATEGORY_EMOJIS } from '../constants';
-import { Transaction } from '../models';
-import { encrypt, getCategoryFromDescription } from '../utils';
-
-export const TransactionInMatchWithRegex = async (userId: string, message: WAWebJS.Message, match: RegExpMatchArray): Promise<void> => {
+export const TransactionInMatchWithRegex = async (
+  sock: WASocket,
+  jid: string, 
+  userId: string, 
+  match: RegExpMatchArray
+): Promise<void> => {
   if (!match) {
-    message.reply('Wrong format, cannot detect transaction');
+    await sock.sendMessage(jid, { text: "Format salah, tidak dapat mendeteksi transaksi"});
     return;
   }
 
@@ -15,8 +19,10 @@ export const TransactionInMatchWithRegex = async (userId: string, message: WAWeb
     const description = match[2] ? match[2].trim() : '-';
     const date = new Date();
 
-    const category = await getCategoryFromDescription(description);
-    const emoji = CATEGORY_EMOJIS[category] || "📦";
+    const category = await getLocalFallbackCategory(description, false);
+    const emoji = category in CATEGORY_EMOJIS_INCOME
+      ? CATEGORY_EMOJIS_INCOME[category as keyof typeof CATEGORY_EMOJIS_INCOME]
+      : "📦";
 
     //save to database
     await Transaction.create({
@@ -28,6 +34,8 @@ export const TransactionInMatchWithRegex = async (userId: string, message: WAWeb
       category
     });
 
-    message.reply(`💰 *Pemasukan Berhasil Dicatat!*\nRp ${amount.toLocaleString('id-ID')} Sumber: ${description}\nKategori: ${emoji} ${category}`);
+    await sock.sendMessage(jid, { text: 
+      `💰 *Pemasukan Berhasil Dicatat!*\nRp ${amount.toLocaleString('id-ID')} Sumber: ${description}\nKategori: ${emoji} ${category}`
+    });
   }
 };

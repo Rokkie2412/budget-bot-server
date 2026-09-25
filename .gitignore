@@ -22,3 +22,5 @@ build/
 # OS Metadata
 .DS_Store
 Thumbs.db
+
+auth_info_baileys

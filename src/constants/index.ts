@@ -14,38 +14,80 @@ export const HELP_COMMANDS = [
   { command: '.batal', desc: 'Hapus transaksi terakhir' },
 ];
 
-export const BUDGET_CATEGORIES = [
+export const BUDGET_CATEGORIES_EXPENSE = [
   "Bills",
   "Education",
   "Family Needs",
   "Food & Drinks",
-  "Gift and Chartiy",
+  "Gift and Charity",
   "Groceries",
-  "Health & personal care",
-  "Hobby & Entertaiment",
+  "Health & Personal Care",
+  "Hobby & Entertainment",
   "Loans",
+  "Lending & Receivables",
   "Saving & Investment",
   "Shopping",
-  "sports",
-  "Transportaion",
+  "Sports",
+  "Transportation",
   "Traveling",
-  "Other"
+  "Debt",
+  "Other Expense",
 ] as const;
 
-export const CATEGORY_EMOJIS: Record<string, string> = {
+export const BUDGET_CATEGORIES_INCOME = [
+  "Salary",
+  "Business & Profit",
+  "Freelance & Side Job",
+  "Investment & Dividend",
+  "Allowance & Gift",
+  "Debt Repayment",
+  "Bonus & Commission",
+  "Rental Income",
+  "Refund & Cashback",
+  "Other Income",
+] as const;
+
+export type IncomeCategory =
+  | "Salary"
+  | "Business & Profit"
+  | "Freelance & Side Job"
+  | "Investment & Dividend"
+  | "Allowance & Gift"
+  | "Debt Repayment"
+  | "Bonus & Commission"
+  | "Rental Income"
+  | "Refund & Cashback"
+  | "Other Income";
+
+export const CATEGORY_EMOJIS_EXPENSE: Record<typeof BUDGET_CATEGORIES_EXPENSE[number], string> = {
   "Bills": "💡",
   "Education": "🎓",
   "Family Needs": "🏠",
   "Food & Drinks": "🍔",
-  "Gift and Chartiy": "🎁",
+  "Gift and Charity": "🎁",
   "Groceries": "🛒",
-  "Health & personal care": "🏥",
-  "Hobby & Entertaiment": "🎮",
+  "Health & Personal Care": "🏥",
+  "Hobby & Entertainment": "🎮",
   "Loans": "💸",
+  "Lending & Receivables": "🤝",
   "Saving & Investment": "📈",
   "Shopping": "🛍️",
-  "sports": "⚽",
-  "Transportaion": "🚗",
+  "Sports": "⚽",
+  "Transportation": "🚗",
   "Traveling": "✈️",
-  "Other": "📦"
+  "Debt": "💳",
+  "Other Expense": "📦"
+};
+
+export const CATEGORY_EMOJIS_INCOME: Record<typeof BUDGET_CATEGORIES_INCOME[number], string> = {
+  "Salary": "💵",
+  "Business & Profit": "📈",
+  "Freelance & Side Job": "💻",
+  "Investment & Dividend": "📊",
+  "Allowance & Gift": "🧧",
+  "Debt Repayment": "🤝",
+  "Bonus & Commission": "🎉",
+  "Rental Income": "🏘️",
+  "Refund & Cashback": "💸",
+  "Other Income": "📥"
 };
