@@ -59,3 +59,8 @@ export type KeywordMapType = Partial<Record<
   Exclude<BudgetCategoryExpense | BudgetCategoryIncome, "Other Expense" | "Other Income">,
   string[]
 >>;
+
+export type RekapItemType = {
+  _id: { type: string; category: string | null };
+  total: number;
+} 

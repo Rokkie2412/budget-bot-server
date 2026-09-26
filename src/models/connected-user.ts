@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-import type { IUserConnected } from '../types';
+import type { IUserConnected } from '../types/index.js';
 
 const UserConnectedSchema = new mongoose.Schema<IUserConnected>(
 	{

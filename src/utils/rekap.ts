@@ -1,5 +1,4 @@
 import { Model } from "mongoose";
-import WAWebJS from "whatsapp-web.js";
 import type { WASocket } from "@whiskeysockets/baileys";
 
 import {
@@ -8,7 +7,7 @@ import {
   CATEGORY_EMOJIS_INCOME,
 } from "../constants/index.js";
 import { Transaction } from "../models/index.js";
-import { ITransaction, Rekap, TotalTransactionRekap } from "../types/index.js";
+import { ITransaction, Rekap, RekapItemType, TotalTransactionRekap } from "../types/index.js";
 import { decrypt } from "./encryption.js";
 
 const rekapFormat = (
@@ -20,7 +19,7 @@ const rekapFormat = (
   categoryBreakdown: string
 ): string => {
   const categorySection = categoryBreakdown ? `
-${categoryBreakdown}  ──────────────────────` : '';
+  ${categoryBreakdown}  ──────────────────────` : '';
 
   const teksRekap = `
   📊 *REKAPITULASI: ${month.toUpperCase()} ${year}*
@@ -103,7 +102,6 @@ export const transactionRecordCurrentMonth = async (
       text: `📭 *Rekap ${longMonth} ${currentYear}*\n\nBelum ada transaksi yang dicatat bulan ini.`,
     });
   } else {
-    // Get separate category breakdowns for income and expenses.
     const categoryRekap = await Transaction.aggregate([
       {
         $match: {
@@ -129,10 +127,7 @@ export const transactionRecordCurrentMonth = async (
 
     let categoryBreakdownText = "";
     let lastType: string | undefined;
-    categoryRekap.forEach((item: {
-      _id: { type: string; category: string | null };
-      total: number;
-    }) => {
+    categoryRekap.forEach((item: RekapItemType) => {
       if (item._id.type !== lastType) {
         lastType = item._id.type;
         categoryBreakdownText += item._id.type === TRANSACTION_TYPE.IN
@@ -141,16 +136,14 @@ export const transactionRecordCurrentMonth = async (
       }
 
       const categoryName = item._id.category || (item._id.type === TRANSACTION_TYPE.IN ? "Other Income" : "Other Expense");
-      const emojiMap = item._id.type === TRANSACTION_TYPE.IN
-        ? CATEGORY_EMOJIS_INCOME
-        : CATEGORY_EMOJIS_EXPENSE;
+      const emojiMap = item._id.type === TRANSACTION_TYPE.IN ? CATEGORY_EMOJIS_INCOME : CATEGORY_EMOJIS_EXPENSE;
       const emoji = emojiMap[categoryName as keyof typeof emojiMap] || "📦";
       const total = item._id.type === TRANSACTION_TYPE.IN ? pemasukan : pengeluaran;
       const percentage = total > 0 ? Math.round((item.total / total) * 100) : 0;
       categoryBreakdownText += `  ${emoji} ${categoryName}: *Rp ${item.total.toLocaleString('id-ID')}* (${percentage}%)\n`;
     });
 
-    const totalTransaction = {
+    const totalTransaction: TotalTransactionRekap = {
       outgoing: jumlahTransaksiKeluar,
       incoming: jumlahTransaksiMasuk,
       total: jumlahTransaksi
@@ -171,9 +164,10 @@ export const transactionRecordCurrentMonth = async (
 
 export const transactionHistoryBy = async (
   userId: string,
-  message: WAWebJS.Message,
-  match: RegExpMatchArray
-): Promise<WAWebJS.Message | undefined> => {
+  match: RegExpMatchArray,
+  sock: WASocket,
+  jid: string, 
+): Promise<void> => {
   if(!match) return;
 
   let getLimit = Math.min(parseInt(match[2] || '5'), 20);
@@ -181,7 +175,9 @@ export const transactionHistoryBy = async (
   const findTransaction = await Transaction.find({userId}).sort({date: -1}).limit(getLimit);
 
   if (findTransaction.length === 0) {
-    return message.reply("📭 Belum ada catatan transaksi.");
+    await sock.sendMessage(jid, { text: "📭 Belum ada catatan transaksii"});
+
+    return
   }
 
   if (findTransaction.length < 5){ 
@@ -211,7 +207,7 @@ export const transactionHistoryBy = async (
       hour: '2-digit',
       minute: '2-digit'
     }).replace(/\./g, ':');
-    // Menyusun baris teks
+
     listTeks += `${index + 1}. ${icon} *Rp ${amt}*${categoryLabel}\n`;
     listTeks += `   🕒 _${dateString}_\n`;
     listTeks += `   📝 ${desc} ${typeLabel}\n\n`;
@@ -219,5 +215,5 @@ export const transactionHistoryBy = async (
 
   listTeks += `──────────────────────\n_Gunakan .rekap untuk total bulanan_`;
 
-  return await message.reply(listTeks.trim());
+  await sock.sendMessage(jid, { text: listTeks.trim()});
 }

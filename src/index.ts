@@ -1,8 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
-import mongoose from "mongoose";
 import qrcode from "qrcode-terminal";
-import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys'
+import makeWASocket, { DisconnectReason, useMultiFileAuthState, type WASocket } from '@whiskeysockets/baileys'
 import { Boom } from '@hapi/boom'
 
 import { Transaction, UserConnected } from "./models/index.js";
@@ -15,34 +14,15 @@ import {
   transactionRecordCurrentMonth,
   helpCommand
 } from "./utils/index.js";
+import connectDB from "./libs/connectDB.js";
 
 dotenv.config();
 const app = express();
 app.use(express.json());
 
-const isDev = process.env.NODE_ENV === "development";
-const dbURI = isDev ? process.env.MONGO_URI_DEV : process.env.MONGO_URI_PROD;
+connectDB();
 
-//connect to mongodb
-mongoose
-  .connect(dbURI || "")
-  .then(() =>
-    console.log(
-      `Connected to MongoDB ${isDev ? "development" : "production"} mode 🛻`,
-    ),
-  )
-  .catch((err) => {
-    console.error("❌ Failed to connect to MongoDB", err);
-    return process.exit(1);
-  });
-
-export async function connectToWhatsApp() {
-  const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys')
-
-  const sock = makeWASocket({
-    auth: state
-  })
-
+const socketConnectionUpadate = (sock: WASocket): void => {
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update
     if (qr) {
@@ -59,6 +39,18 @@ export async function connectToWhatsApp() {
         console.log('opened connection')
     }
   })
+}
+
+const socketSaveCredentials = (sock: WASocket, saveCreds: () => Promise<void>): void => sock.ev.on('creds.update', saveCreds)
+
+export async function connectToWhatsApp() {
+  const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys')
+
+  const sock = makeWASocket({
+    auth: state
+  })
+
+  socketConnectionUpadate(sock);
 
   sock.ev.on('messages.upsert', async (event) => {
     if (event.type !== 'notify') return
@@ -67,11 +59,13 @@ export async function connectToWhatsApp() {
 
     if (!keyEventId) return 
 
+    const undoRegex = /^\.(batal|undo)$/i;
     const formattedNumber = `+${nomorTarget}`;
     const rekapRegex = /^\.(rekap)$/i;
     const regexMatch = new RegExp(nomorTarget);
     const getMyContact = regexMatch.test(keyEventId);
     const helpRegex = /^\.(help)$/i;
+    const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
     const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)(?:\s+(.+))?$/i;
 
     console.log('getMyContact', getMyContact);
@@ -108,16 +102,20 @@ export async function connectToWhatsApp() {
           await helpCommand(sock, getJID, match);
         } else if ((match = getMessage.match(incomeRegex))) {
           await TransactionInMatchWithRegex(sock, getJID, hashedUserId, match);
+        } else if ((match = getMessage.match(undoRegex))) {
+          deleteLastTransaction(sock, getJID, hashedUserId);
+        } else if ((match =  getMessage.match(historyRegex))) {
+          transactionHistoryBy(hashedUserId ,match, sock, getJID);
         } else {
           await TransactionOutMatchWithRegex(sock, getJID, hashedUserId, getMessage);
         }
+
     } catch (error) {
       
     }
   })
 
-  // Save credentials whenever they are updated
-  sock.ev.on('creds.update', saveCreds)
+  socketSaveCredentials(sock, saveCreds);
 }
 
 connectToWhatsApp()

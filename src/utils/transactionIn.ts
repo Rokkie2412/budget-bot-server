@@ -24,7 +24,6 @@ export const TransactionInMatchWithRegex = async (
       ? CATEGORY_EMOJIS_INCOME[category as keyof typeof CATEGORY_EMOJIS_INCOME]
       : "📦";
 
-    //save to database
     await Transaction.create({
       userId: userId,
       description: encrypt(description || ''),
