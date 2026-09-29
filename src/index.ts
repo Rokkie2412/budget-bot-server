@@ -64,14 +64,14 @@ export async function connectToWhatsApp() {
     const undoRegex = /^\.(batal|undo)$/i;
     const formattedNumber = `+${nomorTarget}`;
     const rekapRegex = /^\.(rekap)$/i;
-    const regexMatch = new RegExp(nomorTarget);
-    const getMyContact = regexMatch.test(keyEventId);
     const helpRegex = /^\.(help)$/i;
     const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
     const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)(?:\s+(.+))?$/i;
 
-    console.log('getMyContact', getMyContact);
-    console.log('get message', event.messages[0]?.message?.conversation);
+    // NOTE: Uncomment this if need
+    // const regexMatch = new RegExp(nomorTarget);
+    // const getMyContact = regexMatch.test(keyEventId);
+    // console.log('getMyContact', getMyContact);
 
     const getMessage =  event.messages[0]?.message?.conversation
 
