@@ -27,6 +27,8 @@ const socketConnectionUpadate = (sock: WASocket): void => {
     const { connection, lastDisconnect, qr } = update
     if (qr) {
         qrcode.generate(qr, { small: true })
+        console.log("\n🔗 Buka link ini di browser untuk scan QR:");
+        console.log(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`);
     }
     if (connection === 'close') {
         const shouldReconnect =
