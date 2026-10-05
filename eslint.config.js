@@ -27,7 +27,7 @@ const moduleAwareQuotes = {
             parent.source === node) ||
           (parent.type === 'ImportExpression' && parent.source === node) ||
           (parent.type === 'TSImportType' && parent.parameter === node);
-          const expectedQuote = String.fromCharCode(isModuleSpecifier ? 34 : 39);
+        const expectedQuote = String.fromCharCode(isModuleSpecifier ? 34 : 39);
         const raw = context.sourceCode.getText(node);
 
         if (raw.startsWith(expectedQuote)) return;
@@ -41,9 +41,9 @@ const moduleAwareQuotes = {
           },
           fix(fixer) {
             const serialized = JSON.stringify(node.value);
-              const replacement = isModuleSpecifier
-                ? serialized
-                : `'${serialized.slice(1, -1).replaceAll(String.fromCharCode(39), String.fromCharCode(92, 39))}'`;
+            const replacement = isModuleSpecifier
+              ? serialized
+              : `'${serialized.slice(1, -1).replaceAll(String.fromCharCode(39), String.fromCharCode(92, 39))}'`;
 
             return fixer.replaceText(node, replacement);
           },

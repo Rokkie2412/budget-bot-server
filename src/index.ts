@@ -60,21 +60,21 @@ export async function connectToWhatsApp() {
     if (event.messages[0]?.key.fromMe) return;
     const getJID = event.messages[0]?.key.remoteJid ?? '';
 
-    if (!getJID) return; 
+    if (!getJID) return;
 
     const undoRegex = /^\.(batal|undo)$/i;
     const formattedNumber = `+${nomorTarget}`;
     const rekapRegex = /^\.(rekap)$/i;
     const helpRegex = /^\.(help)$/i;
     const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
-    const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[\.,]\d+)*)(?:\s+(.+))?$/i;
+    const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[.,]\d+)*)(?:\s+(.+))?$/i;
 
     // NOTE: Uncomment this if need
     // const regexMatch = new RegExp(nomorTarget);
     // const getMyContact = regexMatch.test(keyEventId);
     // console.log('getMyContact', getMyContact);
 
-    const getMessage =  event.messages[0]?.message?.conversation;
+    const getMessage = event.messages[0]?.message?.conversation;
 
     try {
       const checkConnectedUser = await UserConnected.findOne({
@@ -91,7 +91,7 @@ export async function connectToWhatsApp() {
       if (!getMessage) {
         return;
       }
-        
+
 
       let match;
 
@@ -107,14 +107,13 @@ export async function connectToWhatsApp() {
         await TransactionInMatchWithRegex(sock, getJID, hashedUserId, match);
       } else if ((match = getMessage.match(undoRegex))) {
         deleteLastTransaction(sock, getJID, hashedUserId);
-      } else if ((match =  getMessage.match(historyRegex))) {
-        transactionHistoryBy(hashedUserId ,match, sock, getJID);
+      } else if ((match = getMessage.match(historyRegex))) {
+        transactionHistoryBy(hashedUserId, match, sock, getJID);
       } else {
         await TransactionOutMatchWithRegex(sock, getJID, hashedUserId, getMessage);
       }
-
     } catch (error) {
-      
+      console.log('Error processing message:', error);
     }
   });
 

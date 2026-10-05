@@ -13,7 +13,7 @@ export const getLocalFallbackCategory = (description: string, isExpense?: boolea
   if (isExpense) {
     for (const [category, keywords] of Object.entries(keywordMap)) {
       for (const kw of keywords) {
-        const escaped = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const escaped = kw.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
         const regex = new RegExp(`\\b${escaped}\\b`, 'i');
         if (regex.test(desc)) {
           return category as BudgetCategoryExpense;
@@ -26,7 +26,7 @@ export const getLocalFallbackCategory = (description: string, isExpense?: boolea
 
   for (const [category, keywords] of Object.entries(keywordMap)) {
     for (const kw of keywords) {
-      const escaped = kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const escaped = kw.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'i');
       if (regex.test(desc)) {
         return category as BudgetCategoryIncome;

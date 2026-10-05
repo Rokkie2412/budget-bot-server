@@ -1,10 +1,10 @@
 import { UserConnected } from "../models/index.js";
 import type { IUserConnected } from "../types/index.js";
 
-const getConnectedAccount = async (userId: string)=> {
+const getConnectedAccount = async (userId: string): Promise<IUserConnected | null> => {
   const getUser = await UserConnected.findOne({userId});
 
   return getUser;
 };
 
-export default UserConnected;
+export default getConnectedAccount;
