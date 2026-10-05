@@ -8,7 +8,9 @@
     "build": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "prepare": "husky",
     "start": "cross-env NODE_ENV=production node dist/index.js",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,7 +21,7 @@
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^7.0.0-rc14",
     "bcryptjs": "3.0.3",
-    "cross-env": "^10.1.0",
+    "cross-env": "10.1.0",
     "crypto": "1.0.1",
     "dotenv": "17.3.1",
     "express": "5.2.1",
@@ -27,16 +29,17 @@
     "qrcode-terminal": "0.12.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@stylistic/eslint-plugin": "^5.10.0",
-    "@types/bcryptjs": "^2.4.6",
+    "@eslint/js": "10.0.1",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "@types/bcryptjs": "2.4.6",
     "@types/express": "5.0.6",
     "@types/mongoose": "5.11.96",
     "@types/node": "25.5.0",
     "@types/qrcode-terminal": "0.12.2",
     "eslint": "^10.12.0",
-    "tsx": "^4.19.0",
+    "husky": "9.1.7",
+    "tsx": "4.19.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "^8.71.0"
+    "typescript-eslint": "8.71.0"
   }
 }
