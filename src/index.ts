@@ -4,7 +4,7 @@ import qrcode from "qrcode-terminal";
 import makeWASocket, { DisconnectReason, useMultiFileAuthState, type WASocket } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 
-import { Transaction, UserConnected } from "./models/index.js";
+import { Transaction } from "./models/index.js";
 import {
   deleteLastTransaction,
   hashUserId,
@@ -13,6 +13,7 @@ import {
   TransactionOutMatchWithRegex,
   transactionRecordCurrentMonth,
   helpCommand,
+  getConnectedAccount,
 } from "./utils/index.js";
 import connectDB from "./libs/connectDB.js";
 
@@ -56,33 +57,29 @@ export async function connectToWhatsApp() {
 
   sock.ev.on('messages.upsert', async (event) => {
     if (event.type !== 'notify') return;
-    const nomorTarget = '6285156141278';
-    if (event.messages[0]?.key.fromMe) return;
-    const getJID = event.messages[0]?.key.remoteJid ?? '';
 
-    if (!getJID) return;
+    if (event.messages[0]?.key.fromMe) return;
+
+    const getJID = event.messages[0]?.key.remoteJid ?? '';
+    const getAltId = event.messages[0]?.key.remoteJidAlt ?? '';
+    const getNumber = getAltId.split('@')[0];
+
+    if (!getJID || !getAltId) return;
 
     const undoRegex = /^\.(batal|undo)$/i;
-    const formattedNumber = `+${nomorTarget}`;
+    const formattedNumber = `+${getNumber}`;
     const rekapRegex = /^\.(rekap)$/i;
     const helpRegex = /^\.(help)$/i;
     const historyRegex = /^\.(last|history|cek)(?:\s+(\d+))?$/i;
     const incomeRegex = /^(?:\+|masuk)\s+(\d+(?:[.,]\d+)*)(?:\s+(.+))?$/i;
 
-    // NOTE: Uncomment this if need
-    // const regexMatch = new RegExp(nomorTarget);
-    // const getMyContact = regexMatch.test(keyEventId);
-    // console.log('getMyContact', getMyContact);
-
     const getMessage = event.messages[0]?.message?.conversation;
 
     try {
-      const checkConnectedUser = await UserConnected.findOne({
-        userId: formattedNumber,
-      });
+      const checkConnectedUser = await getConnectedAccount(formattedNumber);
 
       if (!checkConnectedUser) {
-        console.log('User tidak terdaftar', checkConnectedUser);
+        sock.sendMessage(getJID, { text: 'Nomor Anda tidak terdaftar. Silakan hubungi admin untuk mendaftar.' });
         return;
       }
 
@@ -92,10 +89,7 @@ export async function connectToWhatsApp() {
         return;
       }
 
-
       let match;
-
-      const getJID = event.messages[0]?.key.remoteJid ?? '';
 
       if (!getJID) return;
 

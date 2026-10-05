@@ -5,3 +5,4 @@ export * from "./rekap.js";
 export * from "./transactionIn.js";
 export * from "./transactionOut.js";
 export * from "./help.js";
+export * from './getConnectedAccount.js'
