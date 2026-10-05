@@ -1,7 +1,7 @@
 export const TRANSACTION_TYPE = {
   IN: 'IN',
-  OUT: 'OUT'
-} as const
+  OUT: 'OUT',
+} as const;
 
 export const ENC_ALGORITHM = 'aes-256-cbc' as const;
 
@@ -15,79 +15,79 @@ export const HELP_COMMANDS = [
 ];
 
 export const BUDGET_CATEGORIES_EXPENSE = [
-  "Bills",
-  "Education",
-  "Family Needs",
-  "Food & Drinks",
-  "Gift and Charity",
-  "Groceries",
-  "Health & Personal Care",
-  "Hobby & Entertainment",
-  "Loans",
-  "Lending & Receivables",
-  "Saving & Investment",
-  "Shopping",
-  "Sports",
-  "Transportation",
-  "Traveling",
-  "Debt",
-  "Other Expense",
+  'Bills',
+  'Education',
+  'Family Needs',
+  'Food & Drinks',
+  'Gift and Charity',
+  'Groceries',
+  'Health & Personal Care',
+  'Hobby & Entertainment',
+  'Loans',
+  'Lending & Receivables',
+  'Saving & Investment',
+  'Shopping',
+  'Sports',
+  'Transportation',
+  'Traveling',
+  'Debt',
+  'Other Expense',
 ] as const;
 
 export const BUDGET_CATEGORIES_INCOME = [
-  "Salary",
-  "Business & Profit",
-  "Freelance & Side Job",
-  "Investment & Dividend",
-  "Allowance & Gift",
-  "Debt Repayment",
-  "Bonus & Commission",
-  "Rental Income",
-  "Refund & Cashback",
-  "Other Income",
+  'Salary',
+  'Business & Profit',
+  'Freelance & Side Job',
+  'Investment & Dividend',
+  'Allowance & Gift',
+  'Debt Repayment',
+  'Bonus & Commission',
+  'Rental Income',
+  'Refund & Cashback',
+  'Other Income',
 ] as const;
 
 export type IncomeCategory =
-  | "Salary"
-  | "Business & Profit"
-  | "Freelance & Side Job"
-  | "Investment & Dividend"
-  | "Allowance & Gift"
-  | "Debt Repayment"
-  | "Bonus & Commission"
-  | "Rental Income"
-  | "Refund & Cashback"
-  | "Other Income";
+  | 'Salary'
+  | 'Business & Profit'
+  | 'Freelance & Side Job'
+  | 'Investment & Dividend'
+  | 'Allowance & Gift'
+  | 'Debt Repayment'
+  | 'Bonus & Commission'
+  | 'Rental Income'
+  | 'Refund & Cashback'
+  | 'Other Income';
 
 export const CATEGORY_EMOJIS_EXPENSE: Record<typeof BUDGET_CATEGORIES_EXPENSE[number], string> = {
-  "Bills": "💡",
-  "Education": "🎓",
-  "Family Needs": "🏠",
-  "Food & Drinks": "🍔",
-  "Gift and Charity": "🎁",
-  "Groceries": "🛒",
-  "Health & Personal Care": "🏥",
-  "Hobby & Entertainment": "🎮",
-  "Loans": "💸",
-  "Lending & Receivables": "🤝",
-  "Saving & Investment": "📈",
-  "Shopping": "🛍️",
-  "Sports": "⚽",
-  "Transportation": "🚗",
-  "Traveling": "✈️",
-  "Debt": "💳",
-  "Other Expense": "📦"
+  'Bills': '💡',
+  'Education': '🎓',
+  'Family Needs': '🏠',
+  'Food & Drinks': '🍔',
+  'Gift and Charity': '🎁',
+  'Groceries': '🛒',
+  'Health & Personal Care': '🏥',
+  'Hobby & Entertainment': '🎮',
+  'Loans': '💸',
+  'Lending & Receivables': '🤝',
+  'Saving & Investment': '📈',
+  'Shopping': '🛍️',
+  'Sports': '⚽',
+  'Transportation': '🚗',
+  'Traveling': '✈️',
+  'Debt': '💳',
+  'Other Expense': '📦',
 };
 
 export const CATEGORY_EMOJIS_INCOME: Record<typeof BUDGET_CATEGORIES_INCOME[number], string> = {
-  "Salary": "💵",
-  "Business & Profit": "📈",
-  "Freelance & Side Job": "💻",
-  "Investment & Dividend": "📊",
-  "Allowance & Gift": "🧧",
-  "Debt Repayment": "🤝",
-  "Bonus & Commission": "🎉",
-  "Rental Income": "🏘️",
-  "Refund & Cashback": "💸",
-  "Other Income": "📥"
+  'Salary': '💵',
+  'Business & Profit': '📈',
+  'Freelance & Side Job': '💻',
+  'Investment & Dividend': '📊',
+  'Allowance & Gift': '🧧',
+  'Debt Repayment': '🤝',
+  'Bonus & Commission': '🎉',
+  'Rental Income': '🏘️',
+  'Refund & Cashback': '💸',
+  'Other Income': '📥',
 };

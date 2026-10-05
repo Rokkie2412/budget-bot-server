@@ -16,7 +16,7 @@ const rekapFormat = (
   outgoing: number,
   incoming: number,
   total: TotalTransactionRekap,
-  categoryBreakdown: string
+  categoryBreakdown: string,
 ): string => {
   const categorySection = categoryBreakdown ? `
   ${categoryBreakdown}  ──────────────────────` : '';
@@ -40,7 +40,7 @@ const rekapFormat = (
   `.trim();
 
   return teksRekap;
-}
+};
 
 export const transactionRecordCurrentMonth = async (
   userId: string,
@@ -66,19 +66,19 @@ export const transactionRecordCurrentMonth = async (
         userId,
         $expr: {
           $and: [
-            { $eq: [{ $month: "$date" }, currentMonth] },
-            { $eq: [{ $year: "$date" }, currentYear] }
-          ]
-        }
-      }
+            { $eq: [{ $month: '$date' }, currentMonth] },
+            { $eq: [{ $year: '$date' }, currentYear] },
+          ],
+        },
+      },
     },
     {
       $group: {
-        _id: "$type",
-        total: { $sum: "$amount" },
-        count: { $sum: 1 }
-      }
-    }
+        _id: '$type',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 },
+      },
+    },
   ]);
 
   rekap.forEach((item: Rekap) => {
@@ -93,7 +93,7 @@ export const transactionRecordCurrentMonth = async (
 
   const longMonth = getDate.toLocaleString('id-ID', { 
     month: 'long',
-    timeZone: 'Asia/Jakarta' 
+    timeZone: 'Asia/Jakarta', 
   });
   const jumlahTransaksi = jumlahTransaksiKeluar + jumlahTransaksiMasuk;
 
@@ -108,36 +108,36 @@ export const transactionRecordCurrentMonth = async (
           userId,
           $expr: {
             $and: [
-              { $eq: [{ $month: "$date" }, currentMonth] },
-              { $eq: [{ $year: "$date" }, currentYear] }
-            ]
-          }
-        }
+              { $eq: [{ $month: '$date' }, currentMonth] },
+              { $eq: [{ $year: '$date' }, currentYear] },
+            ],
+          },
+        },
       },
       {
         $group: {
-          _id: { type: "$type", category: "$category" },
-          total: { $sum: "$amount" }
-        }
+          _id: { type: '$type', category: '$category' },
+          total: { $sum: '$amount' },
+        },
       },
       {
-        $sort: { "_id.type": 1, total: -1 }
-      }
+        $sort: { '_id.type': 1, total: -1 },
+      },
     ]);
 
-    let categoryBreakdownText = "";
+    let categoryBreakdownText = '';
     let lastType: string | undefined;
     categoryRekap.forEach((item: RekapItemType) => {
       if (item._id.type !== lastType) {
         lastType = item._id.type;
         categoryBreakdownText += item._id.type === TRANSACTION_TYPE.IN
-          ? "  📁 *PEMASUKAN PER KATEGORI*\n"
-          : "  📁 *PENGELUARAN PER KATEGORI*\n";
+          ? '  📁 *PEMASUKAN PER KATEGORI*\n'
+          : '  📁 *PENGELUARAN PER KATEGORI*\n';
       }
 
-      const categoryName = item._id.category || (item._id.type === TRANSACTION_TYPE.IN ? "Other Income" : "Other Expense");
+      const categoryName = item._id.category || (item._id.type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
       const emojiMap = item._id.type === TRANSACTION_TYPE.IN ? CATEGORY_EMOJIS_INCOME : CATEGORY_EMOJIS_EXPENSE;
-      const emoji = emojiMap[categoryName as keyof typeof emojiMap] || "📦";
+      const emoji = emojiMap[categoryName as keyof typeof emojiMap] || '📦';
       const total = item._id.type === TRANSACTION_TYPE.IN ? pemasukan : pengeluaran;
       const percentage = total > 0 ? Math.round((item.total / total) * 100) : 0;
       categoryBreakdownText += `  ${emoji} ${categoryName}: *Rp ${item.total.toLocaleString('id-ID')}* (${percentage}%)\n`;
@@ -146,8 +146,8 @@ export const transactionRecordCurrentMonth = async (
     const totalTransaction: TotalTransactionRekap = {
       outgoing: jumlahTransaksiKeluar,
       incoming: jumlahTransaksiMasuk,
-      total: jumlahTransaksi
-    }
+      total: jumlahTransaksi,
+    };
 
     const recordTextFormat = rekapFormat(
       monthName,
@@ -155,12 +155,12 @@ export const transactionRecordCurrentMonth = async (
       pengeluaran,
       pemasukan,
       totalTransaction,
-      categoryBreakdownText
+      categoryBreakdownText,
     );
 
     await sock.sendMessage(jid, { text: recordTextFormat });
   }
-}
+};
 
 export const transactionHistoryBy = async (
   userId: string,
@@ -175,9 +175,9 @@ export const transactionHistoryBy = async (
   const findTransaction = await Transaction.find({userId}).sort({date: -1}).limit(getLimit);
 
   if (findTransaction.length === 0) {
-    await sock.sendMessage(jid, { text: "📭 Belum ada catatan transaksii"});
+    await sock.sendMessage(jid, { text: '📭 Belum ada catatan transaksii'});
 
-    return
+    return;
   }
 
   if (findTransaction.length < 5){ 
@@ -192,11 +192,11 @@ export const transactionHistoryBy = async (
 
     const desc = decrypt(tx.description);
     const amt = tx.amount.toLocaleString('id-ID');
-    const categoryName = tx.category || (tx.type === TRANSACTION_TYPE.IN ? "Other Income" : "Other Expense");
+    const categoryName = tx.category || (tx.type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
     const emojiMap = tx.type === TRANSACTION_TYPE.IN
       ? CATEGORY_EMOJIS_INCOME
       : CATEGORY_EMOJIS_EXPENSE;
-    const emoji = emojiMap[categoryName as keyof typeof emojiMap] || "📦";
+    const emoji = emojiMap[categoryName as keyof typeof emojiMap] || '📦';
     const categoryLabel = ` [${emoji} ${categoryName}]`;
 
     const dateString = tx.date.toLocaleString('id-ID', {
@@ -205,7 +205,7 @@ export const transactionHistoryBy = async (
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     }).replace(/\./g, ':');
 
     listTeks += `${index + 1}. ${icon} *Rp ${amt}*${categoryLabel}\n`;
@@ -213,7 +213,7 @@ export const transactionHistoryBy = async (
     listTeks += `   📝 ${desc} ${typeLabel}\n\n`;
   });
 
-  listTeks += `──────────────────────\n_Gunakan .rekap untuk total bulanan_`;
+  listTeks += '──────────────────────\n_Gunakan .rekap untuk total bulanan_';
 
   await sock.sendMessage(jid, { text: listTeks.trim()});
-}
+};

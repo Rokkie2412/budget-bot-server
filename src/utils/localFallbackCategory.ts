@@ -1,5 +1,5 @@
-import { EXPENSE_KEYWORD_MAP } from '../constants/expenseKeyword.js'
-import { INCOME_KEYWORD_MAP } from '../constants/incomeKeyword.js'
+import { EXPENSE_KEYWORD_MAP } from "../constants/expenseKeyword.js";
+import { INCOME_KEYWORD_MAP } from "../constants/incomeKeyword.js";
 import type { BudgetCategoryExpense, BudgetCategoryIncome, KeywordMapType } from "../types/index.js";
 
 /**
@@ -8,7 +8,7 @@ import type { BudgetCategoryExpense, BudgetCategoryIncome, KeywordMapType } from
 export const getLocalFallbackCategory = (description: string, isExpense?: boolean): BudgetCategoryExpense | BudgetCategoryIncome => {
   const desc = description.toLowerCase();
 
-  const keywordMap: KeywordMapType = isExpense ? EXPENSE_KEYWORD_MAP : INCOME_KEYWORD_MAP
+  const keywordMap: KeywordMapType = isExpense ? EXPENSE_KEYWORD_MAP : INCOME_KEYWORD_MAP;
 
   if (isExpense) {
     for (const [category, keywords] of Object.entries(keywordMap)) {
@@ -21,7 +21,7 @@ export const getLocalFallbackCategory = (description: string, isExpense?: boolea
       }
     }
 
-    return "Other Expense";
+    return 'Other Expense';
   }
 
   for (const [category, keywords] of Object.entries(keywordMap)) {
@@ -34,6 +34,6 @@ export const getLocalFallbackCategory = (description: string, isExpense?: boolea
     }
   }
 
-  return "Other Income";
+  return 'Other Income';
 
 };

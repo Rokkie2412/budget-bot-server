@@ -6,14 +6,14 @@ import { decrypt } from "./encryption.js";
 export const deleteLastTransaction = async (  
   sock: WASocket,
   jid: string, 
-  userId: string
+  userId: string,
 ) => {
-  const lastTransaction = await Transaction.findOne({userId}).sort({date: -1})
+  const lastTransaction = await Transaction.findOne({userId}).sort({date: -1});
           
   if(!lastTransaction){
-    await sock.sendMessage(jid, { text: "Data transaksi tidak ditemukan ❌" });
+    await sock.sendMessage(jid, { text: 'Data transaksi tidak ditemukan ❌' });
     
-    return
+    return;
   }
 
   await Transaction.deleteOne({ _id: lastTransaction._id });
@@ -24,7 +24,7 @@ export const deleteLastTransaction = async (
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).replace(/\./g, ':');
 
   const text = `
@@ -38,5 +38,5 @@ export const deleteLastTransaction = async (
 
   await sock.sendMessage(jid, { text });
   
-  return
-}
+  return;
+};

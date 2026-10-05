@@ -1,16 +1,16 @@
-import { TRANSACTION_TYPE, CATEGORY_EMOJIS_INCOME } from '../constants/index.js';
-import { Transaction } from '../models/index.js';
-import { encrypt, getLocalFallbackCategory } from '../utils/index.js';
-import { WASocket } from '@whiskeysockets/baileys';
+import { TRANSACTION_TYPE, CATEGORY_EMOJIS_INCOME } from "../constants/index.js";
+import { Transaction } from "../models/index.js";
+import { encrypt, getLocalFallbackCategory } from "../utils/index.js";
+import { WASocket } from "@whiskeysockets/baileys";
 
 export const TransactionInMatchWithRegex = async (
   sock: WASocket,
   jid: string, 
   userId: string, 
-  match: RegExpMatchArray
+  match: RegExpMatchArray,
 ): Promise<void> => {
   if (!match) {
-    await sock.sendMessage(jid, { text: "Format salah, tidak dapat mendeteksi transaksi"});
+    await sock.sendMessage(jid, { text: 'Format salah, tidak dapat mendeteksi transaksi'});
     return;
   }
 
@@ -22,7 +22,7 @@ export const TransactionInMatchWithRegex = async (
     const category = await getLocalFallbackCategory(description, false);
     const emoji = category in CATEGORY_EMOJIS_INCOME
       ? CATEGORY_EMOJIS_INCOME[category as keyof typeof CATEGORY_EMOJIS_INCOME]
-      : "📦";
+      : '📦';
 
     await Transaction.create({
       userId: userId,
@@ -30,11 +30,11 @@ export const TransactionInMatchWithRegex = async (
       amount: amount || 0,
       date,
       type: TRANSACTION_TYPE.IN,
-      category
+      category,
     });
 
     await sock.sendMessage(jid, { text: 
-      `💰 *Pemasukan Berhasil Dicatat!*\nRp ${amount.toLocaleString('id-ID')} Sumber: ${description}\nKategori: ${emoji} ${category}`
+      `💰 *Pemasukan Berhasil Dicatat!*\nRp ${amount.toLocaleString('id-ID')} Sumber: ${description}\nKategori: ${emoji} ${category}`,
     });
   }
 };
