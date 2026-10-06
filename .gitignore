@@ -23,4 +23,5 @@ build/
 .DS_Store
 Thumbs.db
 
+# Baileys Auth
 auth_info_baileys
