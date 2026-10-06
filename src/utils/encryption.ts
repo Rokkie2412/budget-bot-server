@@ -1,7 +1,7 @@
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
-import { ENC_ALGORITHM } from '../constants'
+import { ENC_ALGORITHM } from "../constants/index.js";
 
 export const hashUserId = (userId: string): string => {
   return bcrypt.hashSync(userId, process.env.STATIC_SALT);
@@ -34,7 +34,7 @@ export const decrypt = (text: string): string => {
 
     return decrypted;
   } catch (error) {
-    console.error("Encryption error:", error);
-    return "[Data Protected]";
+    console.error('Encryption error:', error);
+    return '[Data Protected]';
   }
 };

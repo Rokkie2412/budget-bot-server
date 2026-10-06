@@ -1,10 +1,14 @@
 import { Model } from "mongoose";
-import WAWebJS from "whatsapp-web.js";
+import type { WASocket } from "@whiskeysockets/baileys";
 
-import { TRANSACTION_TYPE, CATEGORY_EMOJIS } from "../constants";
-import { Transaction } from "../models";
-import { ITransaction, Rekap, TotalTransactionRekap } from "../types";
-import { decrypt } from "./encryption";
+import {
+  TRANSACTION_TYPE,
+  CATEGORY_EMOJIS_EXPENSE,
+  CATEGORY_EMOJIS_INCOME,
+} from "../constants/index.js";
+import { Transaction } from "../models/index.js";
+import { ITransaction, Rekap, RekapItemType, TotalTransactionRekap } from "../types/index.js";
+import { decrypt } from "./encryption.js";
 
 const rekapFormat = (
   month: string,
@@ -12,11 +16,10 @@ const rekapFormat = (
   outgoing: number,
   incoming: number,
   total: TotalTransactionRekap,
-  categoryBreakdown: string
+  categoryBreakdown: string,
 ): string => {
   const categorySection = categoryBreakdown ? `
-  📁 *PENGELUARAN PER KATEGORI*
-${categoryBreakdown}  ──────────────────────` : '';
+  ${categoryBreakdown}  ──────────────────────` : '';
 
   const teksRekap = `
   📊 *REKAPITULASI: ${month.toUpperCase()} ${year}*
@@ -37,11 +40,12 @@ ${categoryBreakdown}  ───────────────────�
   `.trim();
 
   return teksRekap;
-}
+};
 
 export const transactionRecordCurrentMonth = async (
   userId: string,
-  message: WAWebJS.Message,
+  sock: WASocket,
+  jid: string,
   Transaction: Model<ITransaction>,
 ): Promise<void> => {
   let pengeluaran = 0;
@@ -62,19 +66,19 @@ export const transactionRecordCurrentMonth = async (
         userId,
         $expr: {
           $and: [
-            { $eq: [{ $month: "$date" }, currentMonth] },
-            { $eq: [{ $year: "$date" }, currentYear] }
-          ]
-        }
-      }
+            { $eq: [{ $month: '$date' }, currentMonth] },
+            { $eq: [{ $year: '$date' }, currentYear] },
+          ],
+        },
+      },
     },
     {
       $group: {
-        _id: "$type",
-        total: { $sum: "$amount" },
-        count: { $sum: 1 }
-      }
-    }
+        _id: '$type',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 },
+      },
+    },
   ]);
 
   rekap.forEach((item: Rekap) => {
@@ -89,53 +93,61 @@ export const transactionRecordCurrentMonth = async (
 
   const longMonth = getDate.toLocaleString('id-ID', { 
     month: 'long',
-    timeZone: 'Asia/Jakarta' 
+    timeZone: 'Asia/Jakarta', 
   });
   const jumlahTransaksi = jumlahTransaksiKeluar + jumlahTransaksiMasuk;
 
   if (jumlahTransaksi === 0) {
-    message.reply(`📭 *Rekap ${longMonth} ${currentYear}*\n\nBelum ada transaksi yang dicatat bulan ini.`);
+    await sock.sendMessage(jid, {
+      text: `📭 *Rekap ${longMonth} ${currentYear}*\n\nBelum ada transaksi yang dicatat bulan ini.`,
+    });
   } else {
-    // Get category breakdown for expenses
     const categoryRekap = await Transaction.aggregate([
       {
         $match: {
           userId,
-          type: TRANSACTION_TYPE.OUT,
           $expr: {
             $and: [
-              { $eq: [{ $month: "$date" }, currentMonth] },
-              { $eq: [{ $year: "$date" }, currentYear] }
-            ]
-          }
-        }
+              { $eq: [{ $month: '$date' }, currentMonth] },
+              { $eq: [{ $year: '$date' }, currentYear] },
+            ],
+          },
+        },
       },
       {
         $group: {
-          _id: "$category",
-          total: { $sum: "$amount" }
-        }
+          _id: { type: '$type', category: '$category' },
+          total: { $sum: '$amount' },
+        },
       },
       {
-        $sort: { total: -1 }
-      }
+        $sort: { '_id.type': 1, total: -1 },
+      },
     ]);
 
-    let categoryBreakdownText = "";
-    if (categoryRekap.length > 0) {
-      categoryRekap.forEach((item: { _id: string | null; total: number }) => {
-        const categoryName = item._id || "Other";
-        const emoji = CATEGORY_EMOJIS[categoryName] || "📦";
-        const percentage = pengeluaran > 0 ? Math.round((item.total / pengeluaran) * 100) : 0;
-        categoryBreakdownText += `  ${emoji} ${categoryName}: *Rp ${item.total.toLocaleString('id-ID')}* (${percentage}%)\n`;
-      });
-    }
+    let categoryBreakdownText = '';
+    let lastType: string | undefined;
+    categoryRekap.forEach((item: RekapItemType) => {
+      if (item._id.type !== lastType) {
+        lastType = item._id.type;
+        categoryBreakdownText += item._id.type === TRANSACTION_TYPE.IN
+          ? '  📁 *PEMASUKAN PER KATEGORI*\n'
+          : '  📁 *PENGELUARAN PER KATEGORI*\n';
+      }
 
-    const totalTransaction = {
+      const categoryName = item._id.category || (item._id.type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
+      const emojiMap = item._id.type === TRANSACTION_TYPE.IN ? CATEGORY_EMOJIS_INCOME : CATEGORY_EMOJIS_EXPENSE;
+      const emoji = emojiMap[categoryName as keyof typeof emojiMap] || '📦';
+      const total = item._id.type === TRANSACTION_TYPE.IN ? pemasukan : pengeluaran;
+      const percentage = total > 0 ? Math.round((item.total / total) * 100) : 0;
+      categoryBreakdownText += `  ${emoji} ${categoryName}: *Rp ${item.total.toLocaleString('id-ID')}* (${percentage}%)\n`;
+    });
+
+    const totalTransaction: TotalTransactionRekap = {
       outgoing: jumlahTransaksiKeluar,
       incoming: jumlahTransaksiMasuk,
-      total: jumlahTransaksi
-    }
+      total: jumlahTransaksi,
+    };
 
     const recordTextFormat = rekapFormat(
       monthName,
@@ -143,18 +155,19 @@ export const transactionRecordCurrentMonth = async (
       pengeluaran,
       pemasukan,
       totalTransaction,
-      categoryBreakdownText
+      categoryBreakdownText,
     );
 
-    message.reply(recordTextFormat);
+    await sock.sendMessage(jid, { text: recordTextFormat });
   }
-}
+};
 
 export const transactionHistoryBy = async (
   userId: string,
-  message: WAWebJS.Message,
-  match: RegExpMatchArray
-): Promise<WAWebJS.Message | undefined> => {
+  match: RegExpMatchArray,
+  sock: WASocket,
+  jid: string, 
+): Promise<void> => {
   if(!match) return;
 
   let getLimit = Math.min(parseInt(match[2] || '5'), 20);
@@ -162,7 +175,9 @@ export const transactionHistoryBy = async (
   const findTransaction = await Transaction.find({userId}).sort({date: -1}).limit(getLimit);
 
   if (findTransaction.length === 0) {
-    return message.reply("📭 Belum ada catatan transaksi.");
+    await sock.sendMessage(jid, { text: '📭 Belum ada catatan transaksii'});
+
+    return;
   }
 
   if (findTransaction.length < 5){ 
@@ -171,14 +186,17 @@ export const transactionHistoryBy = async (
 
   let listTeks = `📝 *${getLimit} TRANSAKSI TERAKHIR*\n━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  findTransaction.forEach((tx,index) => {
+  findTransaction.forEach((tx: ITransaction, index: number) => {
     const icon = tx.type === 'IN' ? '🟢' : '🔴';
     const typeLabel = tx.type === 'IN' ? '[+]' : '[-]';
 
     const desc = decrypt(tx.description);
     const amt = tx.amount.toLocaleString('id-ID');
-    const categoryName = tx.category || "Other";
-    const emoji = CATEGORY_EMOJIS[categoryName] || "📦";
+    const categoryName = tx.category || (tx.type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
+    const emojiMap = tx.type === TRANSACTION_TYPE.IN
+      ? CATEGORY_EMOJIS_INCOME
+      : CATEGORY_EMOJIS_EXPENSE;
+    const emoji = emojiMap[categoryName as keyof typeof emojiMap] || '📦';
     const categoryLabel = ` [${emoji} ${categoryName}]`;
 
     const dateString = tx.date.toLocaleString('id-ID', {
@@ -187,15 +205,15 @@ export const transactionHistoryBy = async (
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     }).replace(/\./g, ':');
-    // Menyusun baris teks
+
     listTeks += `${index + 1}. ${icon} *Rp ${amt}*${categoryLabel}\n`;
     listTeks += `   🕒 _${dateString}_\n`;
     listTeks += `   📝 ${desc} ${typeLabel}\n\n`;
   });
 
-  listTeks += `──────────────────────\n_Gunakan .rekap untuk total bulanan_`;
+  listTeks += '──────────────────────\n_Gunakan .rekap untuk total bulanan_';
 
-  return await message.reply(listTeks.trim());
-}
+  await sock.sendMessage(jid, { text: listTeks.trim()});
+};

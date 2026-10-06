@@ -1,13 +1,19 @@
-import type WAWebJS from "whatsapp-web.js";
+import type { WASocket } from "@whiskeysockets/baileys";
 
-import { Transaction } from "../models";
-import { decrypt } from "./encryption";
+import { Transaction } from "../models/index.js";
+import { decrypt } from "./encryption.js";
 
-export const deleteLastTransaction = async (userId: string, message: WAWebJS.Message) => {
-  const lastTransaction = await Transaction.findOne({userId}).sort({date: -1})
+export const deleteLastTransaction = async (  
+  sock: WASocket,
+  jid: string, 
+  userId: string,
+) => {
+  const lastTransaction = await Transaction.findOne({userId}).sort({date: -1});
           
   if(!lastTransaction){
-    return message.reply("Data transaksi tidak ditemukan");
+    await sock.sendMessage(jid, { text: 'Data transaksi tidak ditemukan ❌' });
+    
+    return;
   }
 
   await Transaction.deleteOne({ _id: lastTransaction._id });
@@ -18,17 +24,19 @@ export const deleteLastTransaction = async (userId: string, message: WAWebJS.Mes
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).replace(/\./g, ':');
 
   const text = `
-🗑️ *TRANSAKSI DIHAPUS*
-━━━━━━━━━━━━━━━━━━━
-💰 *Rp ${amount}*
-📝 ${desc}
-🕒 ${date}
+  🗑️ *TRANSAKSI DIHAPUS*
+  ━━━━━━━━━━━━━━━━━━━
+  💰 *Rp ${amount}*
+  📝 ${desc}
+  🕒 ${date}
 
-_Catatan berhasil dihapus._`;
+  _Catatan berhasil dihapus._`;
 
-  return message.reply(text.trim());
-}
+  await sock.sendMessage(jid, { text });
+  
+  return;
+};
