@@ -3,6 +3,8 @@ export interface IUserConnected {
   password: string;
 }
 
+export type TransactionType = 'OUT' | 'IN';
+
 export type BudgetCategoryExpense =
   | 'Bills'
   | 'Education'

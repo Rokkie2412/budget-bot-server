@@ -1,6 +1,7 @@
 import { TRANSACTION_TYPE, CATEGORY_EMOJIS_INCOME } from "../constants/index.js";
 import { Transaction } from "../models/index.js";
-import { encrypt, getLocalFallbackCategory } from "../utils/index.js";
+import { encrypt } from "../utils/index.js";
+import { getCategoryFromDescription } from "./autoCategory.js";
 import { WASocket } from "@whiskeysockets/baileys";
 
 export const TransactionInMatchWithRegex = async (
@@ -19,7 +20,7 @@ export const TransactionInMatchWithRegex = async (
     const description = match[2] ? match[2].trim() : '-';
     const date = new Date();
 
-    const category = await getLocalFallbackCategory(description, false);
+    const category = await getCategoryFromDescription(description, TRANSACTION_TYPE.IN);
     const emoji = category in CATEGORY_EMOJIS_INCOME
       ? CATEGORY_EMOJIS_INCOME[category as keyof typeof CATEGORY_EMOJIS_INCOME]
       : '📦';
