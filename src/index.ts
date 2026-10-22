@@ -78,8 +78,13 @@ export async function connectToWhatsApp() {
     try {
       const checkConnectedUser = await getConnectedAccount(formattedNumber);
 
-      if (!checkConnectedUser) {
-        sock.sendMessage(getJID, { text: 'Nomor Anda tidak terdaftar. Silakan hubungi admin untuk mendaftar.' });
+      if (!checkConnectedUser || !checkConnectedUser.allowChat) {
+        sock.sendMessage(getJID, {
+          text: `⚠️ *Akses belum tersedia*
+          Nomor WhatsApp Anda belum terdaftar atau belum diizinkan menggunakan layanan ini.
+          Silakan hubungi admin untuk mendaftar:
+          👉 https://wa.me/${process.env.ADMIN_NUMBER}`,
+        });
         return;
       }
 
@@ -115,4 +120,3 @@ export async function connectToWhatsApp() {
 }
 
 connectToWhatsApp();
-

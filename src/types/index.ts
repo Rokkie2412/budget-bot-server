@@ -1,6 +1,7 @@
 export interface IUserConnected {
   userId: string;
   password: string;
+  allowChat: boolean;
 }
 
 export type TransactionType = 'OUT' | 'IN';

@@ -13,6 +13,10 @@ const UserConnectedSchema = new mongoose.Schema<IUserConnected>(
       type: String,
       required: true,
     },
+    allowChat: {
+      type: Boolean,
+      required: true,
+    },
   },
   {
     strict: false,
