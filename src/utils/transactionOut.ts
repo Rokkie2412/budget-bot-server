@@ -1,12 +1,12 @@
 import { TRANSACTION_TYPE, CATEGORY_EMOJIS_EXPENSE } from "../constants/index.js";
-import { Transaction } from "../models/index.js";
+import supabase from "../libs/supabase.js";
 import { encrypt } from "../utils/index.js";
 import { getCategoryFromDescription } from "./autoCategory.js";
 import { WASocket } from "@whiskeysockets/baileys";
 
 export const TransactionOutMatchWithRegex = async (
   sock: WASocket,
-  jid: string, 
+  jid: string,
   userId: string,
   message: string,
 ): Promise<void> => {
@@ -20,36 +20,35 @@ export const TransactionOutMatchWithRegex = async (
     return;
   }
 
-  if (match) {
-    let amount: number;
-    let description: string;
+  let amount: number;
+  let description: string;
 
-    if (match[1]) {
-      amount = Number(match[1]);
-      description = String(match[2]);
-    } else {
-      amount = Number(match[4]);
-      description = String(match[3]);
-    }
-
-    const date = new Date();
-
-    const category = await getCategoryFromDescription(description, TRANSACTION_TYPE.OUT);
-    const emoji = category in CATEGORY_EMOJIS_EXPENSE
-      ? CATEGORY_EMOJIS_EXPENSE[category as keyof typeof CATEGORY_EMOJIS_EXPENSE]
-      : '📦';
-
-    await Transaction.create({
-      userId: userId,
-      description: encrypt(description || ''),
-      amount: amount || 0,
-      date,
-      type: TRANSACTION_TYPE.OUT,
-      category,
-    });
-
-    await sock.sendMessage(jid, { text: 
-      `💰 *Pengeluaran Tercatat!*\nRp ${amount.toLocaleString('id-ID')} Keperluan: ${description}\nKategori: ${emoji} ${category}`,
-    });
+  if (match[1]) {
+    amount = Number(match[1]);
+    description = String(match[2]);
+  } else {
+    amount = Number(match[4]);
+    description = String(match[3]);
   }
+
+  const date = new Date();
+
+  const category = await getCategoryFromDescription(description, TRANSACTION_TYPE.OUT);
+  const emoji = category in CATEGORY_EMOJIS_EXPENSE
+    ? CATEGORY_EMOJIS_EXPENSE[category as keyof typeof CATEGORY_EMOJIS_EXPENSE]
+    : '📦';
+
+  const { error } = await supabase.from('transactions').insert({
+    userId,
+    description: encrypt(description || ''),
+    amount: amount || 0,
+    category,
+    created_at: date.toISOString(),
+  });
+
+  if (error) throw new Error(error.message);
+
+  await sock.sendMessage(jid, { text:
+    `💰 *Pengeluaran Tercatat!*\nRp ${amount.toLocaleString('id-ID')} Keperluan: ${description}\nKategori: ${emoji} ${category}`,
+  });
 };

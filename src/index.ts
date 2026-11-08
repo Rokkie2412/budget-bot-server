@@ -4,10 +4,8 @@ import qrcode from "qrcode-terminal";
 import makeWASocket, { DisconnectReason, useMultiFileAuthState, type WASocket } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 
-import { Transaction } from "./models/index.js";
 import {
   deleteLastTransaction,
-  hashUserId,
   transactionHistoryBy,
   TransactionInMatchWithRegex,
   TransactionOutMatchWithRegex,
@@ -15,13 +13,10 @@ import {
   helpCommand,
   getConnectedAccount,
 } from "./utils/index.js";
-import connectDB from "./libs/connectDB.js";
 
 dotenv.config();
 const app = express();
 app.use(express.json());
-
-connectDB();
 
 const socketConnectionUpadate = (sock: WASocket): void => {
   sock.ev.on('connection.update', (update) => {
@@ -78,17 +73,29 @@ export async function connectToWhatsApp() {
     try {
       const checkConnectedUser = await getConnectedAccount(formattedNumber);
 
-      if (!checkConnectedUser || !checkConnectedUser.allowChat) {
-        sock.sendMessage(getJID, {
-          text: `⚠️ *Akses belum tersedia*
-          Nomor WhatsApp Anda belum terdaftar atau belum diizinkan menggunakan layanan ini.
-          Silakan hubungi admin untuk mendaftar:
-          👉 https://wa.me/${process.env.ADMIN_NUMBER}`,
+      if (!checkConnectedUser.registered) {
+        await sock.sendMessage(getJID, {
+          text: `⚠️ *Nomor belum terdaftar*
+
+Nomor WhatsApp Anda belum terdaftar. Silakan daftar lebih dulu di aplikasi *Dompet Tracker*, lalu hubungkan nomor Anda di menu Profil.
+
+Butuh bantuan? 👉 https://wa.me/${process.env.ADMIN_NUMBER}`,
         });
         return;
       }
 
-      const hashedUserId = hashUserId(formattedNumber);
+      if (!checkConnectedUser.premium || !checkConnectedUser.allowChat) {
+        await sock.sendMessage(getJID, {
+          text: `🔒 *Akses belum aktif*
+
+Akun Anda belum bisa menggunakan bot ini. Pastikan status *Premium* sudah aktif dan opsi *Allow Chat* menyala di aplikasi *Dompet Tracker*.
+
+Butuh bantuan? 👉 https://wa.me/${process.env.ADMIN_NUMBER}`,
+        });
+        return;
+      }
+
+      const userId = checkConnectedUser.userId;
 
       if (!getMessage) {
         return;
@@ -99,17 +106,17 @@ export async function connectToWhatsApp() {
       if (!getJID) return;
 
       if ((match = getMessage.match(rekapRegex))) {
-        await transactionRecordCurrentMonth(hashedUserId, sock, getJID, Transaction);
+        await transactionRecordCurrentMonth(userId, sock, getJID);
       } else if ((match = getMessage.match(helpRegex))) {
         await helpCommand(sock, getJID, match);
       } else if ((match = getMessage.match(incomeRegex))) {
-        await TransactionInMatchWithRegex(sock, getJID, hashedUserId, match);
+        await TransactionInMatchWithRegex(sock, getJID, userId, match);
       } else if ((match = getMessage.match(undoRegex))) {
-        deleteLastTransaction(sock, getJID, hashedUserId);
+        deleteLastTransaction(sock, getJID, userId);
       } else if ((match = getMessage.match(historyRegex))) {
-        transactionHistoryBy(hashedUserId, match, sock, getJID);
+        transactionHistoryBy(userId, match, sock, getJID);
       } else {
-        await TransactionOutMatchWithRegex(sock, getJID, hashedUserId, getMessage);
+        await TransactionOutMatchWithRegex(sock, getJID, userId, getMessage);
       }
     } catch (error) {
       console.log('Error processing message:', error);

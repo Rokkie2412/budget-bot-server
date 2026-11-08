@@ -1,14 +1,48 @@
-import { Model } from "mongoose";
 import type { WASocket } from "@whiskeysockets/baileys";
 
 import {
   TRANSACTION_TYPE,
   CATEGORY_EMOJIS_EXPENSE,
   CATEGORY_EMOJIS_INCOME,
+  BUDGET_CATEGORIES_EXPENSE,
+  BUDGET_CATEGORIES_INCOME,
 } from "../constants/index.js";
-import { Transaction } from "../models/index.js";
-import { ITransaction, Rekap, RekapItemType, TotalTransactionRekap } from "../types/index.js";
+import supabase from "../libs/supabase.js";
+import type { TotalTransactionRekap, TransactionRow, TransactionType } from "../types/index.js";
 import { decrypt } from "./encryption.js";
+
+const JAKARTA_TIME_ZONE = 'Asia/Jakarta';
+
+const getCategoryType = (category: string): TransactionType | null => {
+  if ((BUDGET_CATEGORIES_INCOME as readonly string[]).includes(category)) return TRANSACTION_TYPE.IN;
+  if ((BUDGET_CATEGORIES_EXPENSE as readonly string[]).includes(category)) return TRANSACTION_TYPE.OUT;
+  return null;
+};
+
+const getJakartaMonthRange = (): { year: number; monthName: string; start: Date; end: Date } => {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: JAKARTA_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+
+  // Asia/Jakarta has a fixed UTC+7 offset (no daylight saving).
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  const start = new Date(`${year}-${pad(month)}-01T00:00:00+07:00`);
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const end = new Date(`${nextYear}-${pad(nextMonth)}-01T00:00:00+07:00`);
+
+  const monthName = new Intl.DateTimeFormat('id-ID', {
+    month: 'long',
+    timeZone: JAKARTA_TIME_ZONE,
+  }).format(now);
+
+  return { year, monthName, start, end };
+};
 
 const rekapFormat = (
   month: string,
@@ -46,161 +80,149 @@ export const transactionRecordCurrentMonth = async (
   userId: string,
   sock: WASocket,
   jid: string,
-  Transaction: Model<ITransaction>,
 ): Promise<void> => {
   let pengeluaran = 0;
   let pemasukan = 0;
   let jumlahTransaksiKeluar = 0;
   let jumlahTransaksiMasuk = 0;
 
-  const getDate = new Date();
+  const { year, monthName, start, end } = getJakartaMonthRange();
 
-  const currentMonth = parseInt(getDate.toLocaleString('id-ID', { month: 'numeric', timeZone: 'Asia/Jakarta' }));
-  const currentYear = parseInt(getDate.toLocaleString('id-ID', { year: 'numeric', timeZone: 'Asia/Jakarta' }));
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('amount, category')
+    .eq('userId', userId)
+    .gte('created_at', start.toISOString())
+    .lt('created_at', end.toISOString());
 
-  const monthName = getDate.toLocaleString('id-ID', { month: 'long', timeZone: 'Asia/Jakarta' });
-  
-  const rekap = await Transaction.aggregate([
-    {
-      $match: {
-        userId,
-        $expr: {
-          $and: [
-            { $eq: [{ $month: '$date' }, currentMonth] },
-            { $eq: [{ $year: '$date' }, currentYear] },
-          ],
-        },
-      },
-    },
-    {
-      $group: {
-        _id: '$type',
-        total: { $sum: '$amount' },
-        count: { $sum: 1 },
-      },
-    },
-  ]);
+  if (error) throw new Error(error.message);
 
-  rekap.forEach((item: Rekap) => {
-    if (item._id === TRANSACTION_TYPE.OUT) {
-      pengeluaran = item.total;
-      jumlahTransaksiKeluar = item.count;
-    } else if (item._id === TRANSACTION_TYPE.IN) {
-      pemasukan = item.total;
-      jumlahTransaksiMasuk = item.count;
+  const transactions = (data ?? []) as Pick<TransactionRow, 'amount' | 'category'>[];
+
+  const categoryTotals = new Map<string, { type: TransactionType; category: string; total: number }>();
+
+  for (const transaction of transactions) {
+    const type = getCategoryType(transaction.category);
+    if (!type) continue;
+
+    const amount = Number(transaction.amount);
+    if (type === TRANSACTION_TYPE.IN) {
+      pemasukan += amount;
+      jumlahTransaksiMasuk += 1;
+    } else {
+      pengeluaran += amount;
+      jumlahTransaksiKeluar += 1;
     }
-  });
 
-  const longMonth = getDate.toLocaleString('id-ID', { 
-    month: 'long',
-    timeZone: 'Asia/Jakarta', 
-  });
+    const key = `${type}:${transaction.category}`;
+    const currentCategory = categoryTotals.get(key) ?? {
+      type,
+      category: transaction.category,
+      total: 0,
+    };
+    currentCategory.total += amount;
+    categoryTotals.set(key, currentCategory);
+  }
+
   const jumlahTransaksi = jumlahTransaksiKeluar + jumlahTransaksiMasuk;
 
   if (jumlahTransaksi === 0) {
     await sock.sendMessage(jid, {
-      text: `📭 *Rekap ${longMonth} ${currentYear}*\n\nBelum ada transaksi yang dicatat bulan ini.`,
+      text: `📭 *Rekap ${monthName} ${year}*\n\nBelum ada transaksi yang dicatat bulan ini.`,
     });
-  } else {
-    const categoryRekap = await Transaction.aggregate([
-      {
-        $match: {
-          userId,
-          $expr: {
-            $and: [
-              { $eq: [{ $month: '$date' }, currentMonth] },
-              { $eq: [{ $year: '$date' }, currentYear] },
-            ],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: { type: '$type', category: '$category' },
-          total: { $sum: '$amount' },
-        },
-      },
-      {
-        $sort: { '_id.type': 1, total: -1 },
-      },
-    ]);
-
-    let categoryBreakdownText = '';
-    let lastType: string | undefined;
-    categoryRekap.forEach((item: RekapItemType) => {
-      if (item._id.type !== lastType) {
-        lastType = item._id.type;
-        categoryBreakdownText += item._id.type === TRANSACTION_TYPE.IN
-          ? '  📁 *PEMASUKAN PER KATEGORI*\n'
-          : '  📁 *PENGELUARAN PER KATEGORI*\n';
-      }
-
-      const categoryName = item._id.category || (item._id.type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
-      const emojiMap = item._id.type === TRANSACTION_TYPE.IN ? CATEGORY_EMOJIS_INCOME : CATEGORY_EMOJIS_EXPENSE;
-      const emoji = emojiMap[categoryName as keyof typeof emojiMap] || '📦';
-      const total = item._id.type === TRANSACTION_TYPE.IN ? pemasukan : pengeluaran;
-      const percentage = total > 0 ? Math.round((item.total / total) * 100) : 0;
-      categoryBreakdownText += `  ${emoji} ${categoryName}: *Rp ${item.total.toLocaleString('id-ID')}* (${percentage}%)\n`;
-    });
-
-    const totalTransaction: TotalTransactionRekap = {
-      outgoing: jumlahTransaksiKeluar,
-      incoming: jumlahTransaksiMasuk,
-      total: jumlahTransaksi,
-    };
-
-    const recordTextFormat = rekapFormat(
-      monthName,
-      currentYear.toString(),
-      pengeluaran,
-      pemasukan,
-      totalTransaction,
-      categoryBreakdownText,
-    );
-
-    await sock.sendMessage(jid, { text: recordTextFormat });
+    return;
   }
+
+  const sortedCategories = [...categoryTotals.values()].sort((left, right) => {
+    if (left.type !== right.type) return left.type < right.type ? -1 : 1;
+    return right.total - left.total;
+  });
+
+  let categoryBreakdownText = '';
+  let lastType: TransactionType | undefined;
+  sortedCategories.forEach((item) => {
+    if (item.type !== lastType) {
+      lastType = item.type;
+      categoryBreakdownText += item.type === TRANSACTION_TYPE.IN
+        ? '  📁 *PEMASUKAN PER KATEGORI*\n'
+        : '  📁 *PENGELUARAN PER KATEGORI*\n';
+    }
+
+    const categoryName = item.category || (item.type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
+    const emojiMap = item.type === TRANSACTION_TYPE.IN ? CATEGORY_EMOJIS_INCOME : CATEGORY_EMOJIS_EXPENSE;
+    const emoji = emojiMap[categoryName as keyof typeof emojiMap] || '📦';
+    const total = item.type === TRANSACTION_TYPE.IN ? pemasukan : pengeluaran;
+    const percentage = total > 0 ? Math.round((item.total / total) * 100) : 0;
+    categoryBreakdownText += `  ${emoji} ${categoryName}: *Rp ${item.total.toLocaleString('id-ID')}* (${percentage}%)\n`;
+  });
+
+  const totalTransaction: TotalTransactionRekap = {
+    outgoing: jumlahTransaksiKeluar,
+    incoming: jumlahTransaksiMasuk,
+    total: jumlahTransaksi,
+  };
+
+  const recordTextFormat = rekapFormat(
+    monthName,
+    year.toString(),
+    pengeluaran,
+    pemasukan,
+    totalTransaction,
+    categoryBreakdownText,
+  );
+
+  await sock.sendMessage(jid, { text: recordTextFormat });
 };
 
 export const transactionHistoryBy = async (
   userId: string,
   match: RegExpMatchArray,
   sock: WASocket,
-  jid: string, 
+  jid: string,
 ): Promise<void> => {
-  if(!match) return;
+  if (!match) return;
 
   let getLimit = Math.min(parseInt(match[2] || '5'), 20);
-  
-  const findTransaction = await Transaction.find({userId}).sort({date: -1}).limit(getLimit);
 
-  if (findTransaction.length === 0) {
-    await sock.sendMessage(jid, { text: '📭 Belum ada catatan transaksii'});
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('transaction_id, amount, description, category, created_at')
+    .eq('userId', userId)
+    .order('created_at', { ascending: false })
+    .limit(getLimit);
+
+  if (error) throw new Error(error.message);
+
+  const transactions = (data ?? []) as TransactionRow[];
+
+  if (transactions.length === 0) {
+    await sock.sendMessage(jid, { text: '📭 Belum ada catatan transaksii' });
 
     return;
   }
 
-  if (findTransaction.length < 5){ 
-    getLimit = findTransaction.length;
+  if (transactions.length < 5) {
+    getLimit = transactions.length;
   }
 
   let listTeks = `📝 *${getLimit} TRANSAKSI TERAKHIR*\n━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  findTransaction.forEach((tx: ITransaction, index: number) => {
-    const icon = tx.type === 'IN' ? '🟢' : '🔴';
-    const typeLabel = tx.type === 'IN' ? '[+]' : '[-]';
+  transactions.forEach((tx: TransactionRow, index: number) => {
+    const type = getCategoryType(tx.category) ?? TRANSACTION_TYPE.OUT;
+    const icon = type === TRANSACTION_TYPE.IN ? '🟢' : '🔴';
+    const typeLabel = type === TRANSACTION_TYPE.IN ? '[+]' : '[-]';
 
     const desc = decrypt(tx.description);
-    const amt = tx.amount.toLocaleString('id-ID');
-    const categoryName = tx.category || (tx.type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
-    const emojiMap = tx.type === TRANSACTION_TYPE.IN
+    const amt = Number(tx.amount).toLocaleString('id-ID');
+    const categoryName = tx.category || (type === TRANSACTION_TYPE.IN ? 'Other Income' : 'Other Expense');
+    const emojiMap = type === TRANSACTION_TYPE.IN
       ? CATEGORY_EMOJIS_INCOME
       : CATEGORY_EMOJIS_EXPENSE;
     const emoji = emojiMap[categoryName as keyof typeof emojiMap] || '📦';
     const categoryLabel = ` [${emoji} ${categoryName}]`;
 
-    const dateString = tx.date.toLocaleString('id-ID', {
-      timeZone: 'Asia/Jakarta',
+    const dateString = new Date(tx.created_at).toLocaleString('id-ID', {
+      timeZone: JAKARTA_TIME_ZONE,
       day: 'numeric',
       month: 'short',
       year: 'numeric',
