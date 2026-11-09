@@ -1,7 +1,4 @@
-export interface IUserConnected {
-  userId: string;
-  password: string;
-}
+export type TransactionType = 'OUT' | 'IN';
 
 export type BudgetCategoryExpense =
   | 'Bills'
@@ -34,20 +31,34 @@ export type BudgetCategoryIncome =
   | 'Refund & Cashback'
   | 'Other Income';
 
-export interface ITransaction {
+export type BudgetCategory = BudgetCategoryExpense | BudgetCategoryIncome;
+
+/**
+ * Row shape of the shared `public.transactions` table used by budget-tracker-pwa.
+ * `description` is stored encrypted; `type` is derived from `category`.
+ */
+export interface TransactionRow {
+  transaction_id: string;
   userId: string;
   amount: number;
   description: string;
-  date: Date;
-  type: 'OUT' | 'IN';
-  category?: BudgetCategoryExpense | BudgetCategoryIncome;
+  category: string;
+  created_at: string;
 }
 
-export interface Rekap {
-  _id: 'OUT' | 'IN';
-  total: number;
-  count: number;
+/** Row shape of the shared `public.user_preferences` table. */
+export interface UserPreferences {
+  premium: boolean;
+  allowChat: boolean;
 }
+
+/**
+ * Result of resolving a WhatsApp number to a linked account.
+ * `registered: false` means no account is linked to that phone number.
+ */
+export type ConnectedAccount =
+  | { registered: false }
+  | ({ registered: true; userId: string } & UserPreferences);
 
 export interface TotalTransactionRekap {
   outgoing: number;
@@ -56,11 +67,6 @@ export interface TotalTransactionRekap {
 }
 
 export type KeywordMapType = Partial<Record<
-  Exclude<BudgetCategoryExpense | BudgetCategoryIncome, 'Other Expense' | 'Other Income'>,
+  Exclude<BudgetCategory, 'Other Expense' | 'Other Income'>,
   string[]
 >>;
-
-export type RekapItemType = {
-  _id: { type: string; category: string | null };
-  total: number;
-}; 

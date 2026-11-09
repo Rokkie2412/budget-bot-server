@@ -1,16 +1,16 @@
 # Budget Bot Server 📊🤖
 
-Budget Bot Server is an automated WhatsApp bot designed to track personal expenses and income in real-time. The bot is powered by **Gemini 3.5 Flash** for smart transaction categorization, with a robust local keyword-based regex matcher as a fallback.
+Budget Bot Server is an automated WhatsApp bot designed to track personal expenses and income in real-time. The bot uses **Groq** for smart transaction categorization, with a local keyword-based matcher as a fallback.
 
 ---
 
 ## 🚀 Key Features
 
 - **Automated Logging**: Send simple WhatsApp messages (e.g., `makan sate 12000` or `masuk 5000000 gajian`), and the bot will record them instantly.
-- **Smart Categorization (Gemini 3.5 Flash)**: Leverages generative AI to analyze transaction descriptions and automatically group them into 15 specific categories.
+- **Smart Categorization (Groq)**: Leverages generative AI to analyze transaction descriptions and automatically group them into budget categories.
 - **Shorthand Hashtag & Keyword Fallback**: 
   - Manually assign/override a category by appending a hashtag (e.g., `#Shopping`).
-  - Automatically falls back to a local regex keyword matcher if the Gemini API is offline or quota-limited.
+  - Automatically falls back to a local keyword matcher if Groq is unavailable or quota-limited.
 - **Monthly Summary (`.rekap`)**: Displays incoming and outgoing totals, alongside a percentage breakdown of spending per category.
 - **Transaction History (`.cek` / `.history`)**: View recent transactions with their date, description, category name, and custom emoji.
 - **Undo Transaction (`.batal` / `.undo`)**: Easily delete the last recorded transaction in case of typos.
@@ -22,8 +22,8 @@ Budget Bot Server is an automated WhatsApp bot designed to track personal expens
 Before you get started, make sure you have:
 - **Node.js** (v18+) or **Bun** (highly recommended for performance)
 - **Google Chrome** or **Chromium** (required to run the WhatsApp Web client)
-- A **MongoDB Atlas** account (cloud database)
-- An API Key from **Google AI Studio** (to run Gemini 3.5 Flash)
+- A **Supabase** project (the same project used by `budget-tracker-pwa`)
+- An API key from [Groq](https://console.groq.com/keys)
 
 ---
 
@@ -44,24 +44,35 @@ bun install
 Create a file named `.env` in the root of the project and fill in the following configuration:
 
 ```env
-# MongoDB Atlas Database URI
-MONGO_URI_PROD="mongodb+srv://..."
-MONGO_URI_DEV="mongodb://..."
 NODE_ENV=development
 PORT=1001
 
-# Encryption Keys for Transaction Descriptions (32 characters)
+# Encryption key for transaction descriptions (at least 32 bytes).
+# Must match budget-tracker-pwa so both apps can read the same data.
 ENCRYPTION_KEY="i1F2n8H3mJ5pL1vD4sT7uX0zF6qW4eY2"
-STATIC_SALT="\$2a\$10\$V2sL5gN8jQ8rT1pV1cX3yC"
 
-# Google Gemini API Key
-GEMINI_API_KEY="AQ.Ab8RN6..."
+# Groq API Key
+GROQ_API_KEY="your-groq-api-key"
 
-# Optional: If Chrome cannot be found automatically on Windows
-# PUPPETEER_EXECUTABLE_PATH="C:\Program Files\Google\Chrome\Application\chrome.exe"
+# WhatsApp number that users can contact to request access
+ADMIN_NUMBER="6285156141278"
+
+# Supabase project shared with budget-tracker-pwa
+PUBLIC_SUPABASE_URL_DEV="https://your-dev-project.supabase.co"
+PUBLIC_SUPABASE_PUBLISHABLE_KEY_DEV="your-dev-publishable-key"
+PUBLIC_SUPABASE_URL="https://your-prod-project.supabase.co"
+PUBLIC_SUPABASE_PUBLISHABLE_KEY="your-prod-publishable-key"
+
+# Server-only secret keys (bypass RLS). Never expose or commit these.
+# Get them from Supabase dashboard > Project Settings > API keys.
+SUPABASE_SERVICE_ROLE_KEY_DEV="your-dev-service-role-key"
+SUPABASE_SERVICE_ROLE_KEY="your-prod-service-role-key"
 ```
 
-> **IMPORTANT**: Make sure your current IP address is whitelisted in your MongoDB Atlas dashboard under **Network Access** to allow successful database connections.
+> **IMPORTANT**: The bot writes to the same Supabase project as `budget-tracker-pwa`.
+> Users link their WhatsApp number and enable chat from the PWA profile page; the bot
+> only records transactions for accounts where `allowChat` is enabled. Transaction
+> descriptions are encrypted with the shared `ENCRYPTION_KEY`.
 
 ### 3. Install Compatible Chrome for Puppeteer (Windows Only)
 If you are on Windows and Puppeteer fails to find Chrome during launch, run this command:

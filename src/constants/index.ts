@@ -47,18 +47,6 @@ export const BUDGET_CATEGORIES_INCOME = [
   'Other Income',
 ] as const;
 
-export type IncomeCategory =
-  | 'Salary'
-  | 'Business & Profit'
-  | 'Freelance & Side Job'
-  | 'Investment & Dividend'
-  | 'Allowance & Gift'
-  | 'Debt Repayment'
-  | 'Bonus & Commission'
-  | 'Rental Income'
-  | 'Refund & Cashback'
-  | 'Other Income';
-
 export const CATEGORY_EMOJIS_EXPENSE: Record<typeof BUDGET_CATEGORIES_EXPENSE[number], string> = {
   'Bills': '💡',
   'Education': '🎓',

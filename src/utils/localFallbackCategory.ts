@@ -3,7 +3,7 @@ import { INCOME_KEYWORD_MAP } from "../constants/incomeKeyword.js";
 import type { BudgetCategoryExpense, BudgetCategoryIncome, KeywordMapType } from "../types/index.js";
 
 /**
- * Categorize description using local keyword matching rules when Gemini is unavailable.
+ * Categorize description using local keyword matching when AI categorization is unavailable.
  */
 export const getLocalFallbackCategory = (description: string, isExpense?: boolean): BudgetCategoryExpense | BudgetCategoryIncome => {
   const desc = description.toLowerCase();

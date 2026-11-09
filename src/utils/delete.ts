@@ -1,26 +1,43 @@
 import type { WASocket } from "@whiskeysockets/baileys";
 
-import { Transaction } from "../models/index.js";
+import supabase from "../libs/supabase.js";
 import { decrypt } from "./encryption.js";
+import type { TransactionRow } from "../types/index.js";
 
-export const deleteLastTransaction = async (  
+export const deleteLastTransaction = async (
   sock: WASocket,
-  jid: string, 
+  jid: string,
   userId: string,
 ) => {
-  const lastTransaction = await Transaction.findOne({userId}).sort({date: -1});
-          
-  if(!lastTransaction){
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('transaction_id, amount, description, created_at')
+    .eq('userId', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+
+  const lastTransaction = data as Pick<TransactionRow, 'transaction_id' | 'amount' | 'description' | 'created_at'> | null;
+
+  if (!lastTransaction) {
     await sock.sendMessage(jid, { text: 'Data transaksi tidak ditemukan ❌' });
-    
+
     return;
   }
 
-  await Transaction.deleteOne({ _id: lastTransaction._id });
+  const { error: deleteError } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('transaction_id', lastTransaction.transaction_id)
+    .eq('userId', userId);
 
-  const amount = lastTransaction.amount.toLocaleString('id-ID');
+  if (deleteError) throw new Error(deleteError.message);
+
+  const amount = Number(lastTransaction.amount).toLocaleString('id-ID');
   const desc = decrypt(lastTransaction.description);
-  const date = lastTransaction.date.toLocaleString('id-ID', {
+  const date = new Date(lastTransaction.created_at).toLocaleString('id-ID', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -37,6 +54,6 @@ export const deleteLastTransaction = async (
   _Catatan berhasil dihapus._`;
 
   await sock.sendMessage(jid, { text });
-  
+
   return;
 };
